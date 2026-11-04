@@ -16,9 +16,10 @@ window @0,0 1100x700
   menu_item "Music" @18,376 236x36
   menu_item "Trash" @18,416 236x36
   text "Devices" @28,458 216x14.4
-  list @18,486 236x76
+  list @18,486 236x36
     menu_item "CrownBook Eject CrownBook" @18,486 236x36
-    menu_item "Pixel 9 Pro" @18,526 236x36
+  list @18,526 236x36
+    menu_item "Pixel 9 Pro, connected" @18,526 236x36
   image @31,618.5 15x15
   text "Storage" @54,618.2 54.6x15.6
   text "58%" @219.4,618.8 21.6x14.4
@@ -108,8 +109,6 @@ window @0,0 1100x700
     text "Oct 24, 2026" @898,320 180x14.4
     text "Where" @898,342.4 180x13.2
     text "Documents › Launch" @898,356.6 180x14.4
-    text "Brand" @918,387.4 33x13.2
-    text "Final" @985,387.4 33x13.2
     button "Open" @898,583 56.8x28
     button "Send to Pixel 9 Pro" @898,617 183.8x28
   text "16 items, 1 selected" @282,670.8 144x14.4

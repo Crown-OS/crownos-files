@@ -1,5 +1,6 @@
 //! The right-click menu: entry actions over a selection, folder actions
-//! over the empty area, the trash's own actions, and an "Open With" page.
+//! over the empty area, the trash's own actions, and the "Open With", "Tags"
+//! and "Send to" pages.
 
 use crownconfig::ViewMode;
 use crownui::{
@@ -16,17 +17,23 @@ use crate::{
         clipboard::{copy_selection, cut_selection, duplicate_selection, paste},
         deleting::{delete_selection, empty_trash, restore_selection, trash_selection},
         opening::{MenuApp, choose_app, open_selection, open_with, request_menu_apps},
+        peers::Peer,
+        properties::show_properties,
         quick_look::toggle_quick_look,
         selection::select_all,
+        tagging::selection_tags,
         virtual_folder::VirtualFolder,
     },
     state::Store,
+    views::{send_menu_page::send_items, tag_menu_page::tag_items},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MenuPage {
     Main,
     OpenWith,
+    Tags,
+    SendTo,
 }
 
 /// What the menu shows, rebuilt whenever it changes.
@@ -36,6 +43,8 @@ struct MenuContent {
     page: MenuPage,
     in_trash: bool,
     apps: Option<Vec<MenuApp>>,
+    tags: Vec<(String, bool)>,
+    peers: Vec<Peer>,
 }
 
 /// Opens the menu where the pointer last went down.
@@ -53,6 +62,8 @@ pub fn file_menu(store: Store) -> impl View {
             move |_, content: MenuContent| {
                 let items = match (content.page, content.has_selection, content.in_trash) {
                     (MenuPage::OpenWith, _, _) => open_with_items(store, content.apps),
+                    (MenuPage::Tags, _, _) => tag_items(store, content.tags),
+                    (MenuPage::SendTo, _, _) => send_items(store, content.peers),
                     (MenuPage::Main, true, true) => trash_items(store),
                     (MenuPage::Main, true, false) => entry_items(store),
                     (MenuPage::Main, false, in_trash) => folder_items(store, in_trash),
@@ -78,7 +89,18 @@ fn content(runtime: &mut Runtime, store: Store) -> MenuContent {
         }),
         apps: match page {
             MenuPage::OpenWith => store.opening.menu_apps.get(runtime),
-            MenuPage::Main => None,
+            _ => None,
+        },
+        tags: match page {
+            MenuPage::Tags => {
+                store.tagging.revision.get(runtime);
+                selection_tags(runtime, store)
+            }
+            _ => Vec::new(),
+        },
+        peers: match page {
+            MenuPage::SendTo => store.peers.reachable(runtime),
+            _ => Vec::new(),
         },
     }
 }
@@ -87,6 +109,28 @@ fn item(label: &str, icon: &'static str, store: Store, run: fn(&mut Cx, Store)) 
     menu_item(label)
         .leading_icon(icon)
         .on_click(move |cx, _| run(cx, store))
+        .boxed()
+}
+
+/// A row that turns the menu to `page`, keeping it open.
+fn page_item(label: &str, icon: &'static str, store: Store, page: MenuPage) -> AnyView {
+    menu_submenu(label)
+        .leading_icon(icon)
+        .on_click(move |cx, event| {
+            event.stop_propagation();
+            store.menu_page.set(cx, page);
+        })
+        .boxed()
+}
+
+/// The first row of every page, back to the main one.
+pub fn back_item(store: Store) -> AnyView {
+    menu_item("Back")
+        .leading_icon(icons::CHEVRON_LEFT)
+        .on_click(move |cx, event| {
+            event.stop_propagation();
+            store.menu_page.set(cx, MenuPage::Main);
+        })
         .boxed()
 }
 
@@ -116,13 +160,7 @@ fn entry_items(store: Store) -> Vec<AnyView> {
     let [open, quick_look] = open_items(store);
     vec![
         open,
-        menu_submenu("Open With")
-            .leading_icon(icons::APP_WINDOW)
-            .on_click(move |cx, event| {
-                event.stop_propagation();
-                store.menu_page.set(cx, MenuPage::OpenWith);
-            })
-            .boxed(),
+        page_item("Open With", icons::APP_WINDOW, store, MenuPage::OpenWith),
         quick_look,
         menu_separator().boxed(),
         menu_item("Cut")
@@ -149,20 +187,15 @@ fn entry_items(store: Store) -> Vec<AnyView> {
         item("Duplicate", icons::COPY_PLUS, store, duplicate_selection),
         later("Compress", icons::ARCHIVE, store, Deferred::Compress),
         menu_separator().boxed(),
-        later("Tags…", icons::TAG, store, Deferred::Tags),
-        later(
-            "Send to Device",
-            icons::SMARTPHONE,
-            store,
-            Deferred::SendToDevice,
-        ),
+        page_item("Tags", icons::TAG, store, MenuPage::Tags),
+        page_item("Send to", icons::SMARTPHONE, store, MenuPage::SendTo),
         menu_separator().boxed(),
         menu_item("Move to Trash")
             .leading_icon(icons::TRASH_2)
             .shortcut_hint("Delete")
             .on_click(move |cx, _| trash_selection(cx, store))
             .boxed(),
-        later("Properties", icons::INFO, store, Deferred::Properties),
+        item("Properties", icons::INFO, store, show_properties),
     ]
 }
 
@@ -182,16 +215,7 @@ fn trash_items(store: Store) -> Vec<AnyView> {
 }
 
 fn open_with_items(store: Store, apps: Option<Vec<MenuApp>>) -> Vec<AnyView> {
-    let mut items = vec![
-        menu_item("Back")
-            .leading_icon(icons::CHEVRON_LEFT)
-            .on_click(move |cx, event| {
-                event.stop_propagation();
-                store.menu_page.set(cx, MenuPage::Main);
-            })
-            .boxed(),
-        menu_header("Open With").boxed(),
-    ];
+    let mut items = vec![back_item(store), menu_header("Open With").boxed()];
     match apps {
         None => items.push(menu_item_disabled("Looking for applications…").boxed()),
         Some(apps) if apps.is_empty() => {
@@ -263,6 +287,12 @@ fn folder_items(store: Store, in_trash: bool) -> Vec<AnyView> {
             set_view_mode(cx, store, next);
         }),
     ]);
+    if !in_trash {
+        items.extend([
+            menu_separator().boxed(),
+            item("Properties", icons::INFO, store, show_properties),
+        ]);
+    }
     items
 }
 

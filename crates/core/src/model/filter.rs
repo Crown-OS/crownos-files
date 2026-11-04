@@ -1,11 +1,14 @@
+use compact_str::CompactString;
 use memchr::{memchr2_iter, memmem::Finder};
 
 /// The search box's instant filter: a byte substring match on names that is
-/// case-insensitive unless the query has an uppercase letter.
+/// case-insensitive unless the query has an uppercase letter, optionally
+/// narrowed to a set of names (the files a `tag:` filter matched).
 #[derive(Debug, Clone)]
 pub struct Filter {
     query: Box<str>,
-    matcher: Matcher,
+    matcher: Option<Matcher>,
+    names: Option<Box<[CompactString]>>,
 }
 
 #[derive(Debug, Clone)]
@@ -17,18 +20,22 @@ enum Matcher {
 impl Filter {
     /// `None` for an empty query, which filters nothing.
     pub fn new(query: &str) -> Option<Self> {
-        if query.is_empty() {
-            return None;
-        }
-        let matcher = if query.chars().any(char::is_uppercase) {
-            Matcher::Exact(Box::new(Finder::new(query.as_bytes()).into_owned()))
-        } else {
-            Matcher::FoldedAscii(query.as_bytes().to_ascii_lowercase().into_boxed_slice())
-        };
-        Some(Self {
+        (!query.is_empty()).then(|| Self {
             query: query.into(),
-            matcher,
+            matcher: Matcher::of(query),
+            names: None,
         })
+    }
+
+    /// Admits only `names` among those `query` matches; an empty query
+    /// admits every one of `names`.
+    pub fn among(query: &str, mut names: Vec<CompactString>) -> Self {
+        names.sort_unstable();
+        Self {
+            query: query.into(),
+            matcher: Matcher::of(query),
+            names: Some(names.into_boxed_slice()),
+        }
     }
 
     pub fn query(&self) -> &str {
@@ -36,16 +43,45 @@ impl Filter {
     }
 
     pub fn matches(&self, name: &[u8]) -> bool {
-        match &self.matcher {
-            Matcher::Exact(finder) => finder.find(name).is_some(),
-            Matcher::FoldedAscii(needle) => contains_folded(name, needle),
+        let admitted = self.names.as_ref().is_none_or(|names| {
+            names
+                .binary_search_by(|known| known.as_bytes().cmp(name))
+                .is_ok()
+        });
+        admitted
+            && self
+                .matcher
+                .as_ref()
+                .is_none_or(|matcher| matcher.matches(name))
+    }
+}
+
+impl Matcher {
+    fn of(query: &str) -> Option<Self> {
+        if query.is_empty() {
+            None
+        } else if query.chars().any(char::is_uppercase) {
+            Some(Self::Exact(Box::new(
+                Finder::new(query.as_bytes()).into_owned(),
+            )))
+        } else {
+            Some(Self::FoldedAscii(
+                query.as_bytes().to_ascii_lowercase().into_boxed_slice(),
+            ))
+        }
+    }
+
+    fn matches(&self, name: &[u8]) -> bool {
+        match self {
+            Self::Exact(finder) => finder.find(name).is_some(),
+            Self::FoldedAscii(needle) => contains_folded(name, needle),
         }
     }
 }
 
 impl PartialEq for Filter {
     fn eq(&self, other: &Self) -> bool {
-        self.query == other.query
+        self.query == other.query && self.names == other.names
     }
 }
 
@@ -88,6 +124,17 @@ mod tests {
         assert!(!matches("xyz", "abc"));
         assert!(!matches("abcd", "xxabc"));
         assert!(Filter::new("").is_none());
+    }
+
+    #[test]
+    fn a_name_set_narrows_the_query() {
+        let tagged = Filter::among("", vec!["b.txt".into(), "a.md".into()]);
+        assert!(tagged.matches(b"a.md") && tagged.matches(b"b.txt"));
+        assert!(!tagged.matches(b"c.md"));
+        let both = Filter::among("md", vec!["b.txt".into(), "a.md".into()]);
+        assert!(both.matches(b"a.md") && !both.matches(b"b.txt"));
+        assert_ne!(tagged, Filter::among("", vec!["a.md".into()]));
+        assert!(!Filter::among("", Vec::new()).matches(b"a.md"));
     }
 
     #[test]

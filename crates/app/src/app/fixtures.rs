@@ -4,15 +4,22 @@
 use std::{fs, path::Path, sync::Arc};
 
 use crownconfig::{Files, TagColor};
+use crownos_files_devices::{
+    storage::SpaceUsage,
+    udisks::{Drive, Hints, OwnedObjectPath, Volume},
+};
 use crownui::prelude::Cx;
 use tempfile::TempDir;
 
 use crate::{
-    app::listing::publish,
+    app::{
+        drives::DriveRow,
+        listing::publish,
+        peers::{Peer, PeerId, PeerKind},
+        storage::DiskSpace,
+    },
     model::{
-        device_entry::{DeviceEntry, DeviceKind},
         dir_stamp::DirStamp,
-        disk_usage::DiskUsage,
         entry::{Entry, EntryExtra},
         files_op::FilesOp,
         places::Places,
@@ -129,30 +136,27 @@ pub fn mockup_store(cx: &mut Cx, home: &Path) -> Store {
         });
         folder.apply(FilesOp::Done { dir, ticket, stamp });
     });
-    store.storage.set(
+    store.storage.space.set(
         cx,
-        Some(DiskUsage {
-            total: 1_000 * GB,
-            available: 412 * GB,
+        Some(DiskSpace {
+            usage: SpaceUsage {
+                total: 1_000 * GB,
+                free: 412 * GB,
+                available: 412 * GB,
+            },
+            holds_home: true,
         }),
     );
-    store.devices.set(
+    let mut crownbook = volume("nvme0n1p2", "CrownBook", false);
+    crownbook.mount_points.push(home.to_path_buf());
+    store.drives.rows.set(
         cx,
-        vec![
-            DeviceEntry {
-                name: "CrownBook".to_owned(),
-                kind: DeviceKind::Drive,
-                mount: Some(home.into()),
-                online: true,
-            },
-            DeviceEntry {
-                name: "Pixel 9 Pro".to_owned(),
-                kind: DeviceKind::Phone,
-                mount: None,
-                online: true,
-            },
-        ],
+        vec![DriveRow {
+            volume: crownbook,
+            activity: None,
+        }],
     );
+    store.peers.paired.set(cx, vec![pixel()]);
     store.tags.set(
         cx,
         vec![
@@ -168,6 +172,42 @@ pub fn mockup_store(cx: &mut Cx, home: &Path) -> Store {
     );
     publish(cx, store);
     store
+}
+
+/// An unmounted, unencrypted volume `label` on `/dev/<device>`.
+pub fn volume(device: &str, label: &str, removable: bool) -> Volume {
+    let path = |kind: &str, name: &str| {
+        OwnedObjectPath::try_from(format!("/org/freedesktop/UDisks2/{kind}/{name}")).unwrap()
+    };
+    Volume {
+        object_path: path("block_devices", device),
+        device: format!("/dev/{device}").into(),
+        label: label.into(),
+        size: 64 * GB,
+        fs_type: "ext4".into(),
+        mount_points: Vec::new(),
+        drive: Some(Drive {
+            object_path: path("drives", device),
+            removable,
+            ejectable: removable,
+            ..Drive::default()
+        }),
+        is_encrypted: false,
+        cleartext_device: None,
+        hints: Hints {
+            auto: removable,
+            ..Hints::default()
+        },
+    }
+}
+
+pub fn pixel() -> Peer {
+    Peer {
+        id: PeerId([9; 32]),
+        name: "Pixel 9 Pro".to_owned(),
+        kind: PeerKind::Phone,
+        connected: true,
+    }
 }
 
 /// Nov 4, 2026, 12:00 on this machine's clock, so the mockup's "Today, 09:14"

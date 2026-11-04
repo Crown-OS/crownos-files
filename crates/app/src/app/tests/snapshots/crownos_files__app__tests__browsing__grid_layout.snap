@@ -100,35 +100,37 @@ stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_sec
 stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack @18,458 236x26 pt-0 pr-10 pb-0 pl-10 h-26
 stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack > text @28,458 216x14.4 
 stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] @18,486 236x76 gap-4/4
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each @18,486 236x76 gap-4/4
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] @18,486 236x36 flex-row pt-0 pr-10 pb-0 pl-10 h-36
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > stack @18.5,486.5 235x35 absolute bg-#ffffff0e rounded-16 opacity-0
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > stack[1] @18,486 236x36 absolute opacity-0
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > stack[1] > stack @18.5,486.5 235x35 absolute bg-#232326ff rounded-16
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > stack[1] > canvas[1] @18,486 236x36 absolute
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > stack[2] @28,495 18x18 w-18 h-18
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > stack[2] > svg @28,495 18x18 w-18 h-18
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > stack[2] > svg[1] @28,495 18x18 absolute w-18 h-18 opacity-0
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > text[3] @56,495.6 154x16.8 grow-1
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > stack[4] @216,490 28x28 flex-row gap-6/6
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > stack[4] > kit_button @216,490 28x28 flex-row pt-0 pr-6.5 pb-0 pl-6.5 h-28 rounded-8
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > stack[4] > kit_button > canvas @216,490 28x28 absolute
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > stack[4] > kit_button > stack[1] @216,490 28x28 absolute bg-#ffffff10 rounded-8 opacity-0
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > stack[4] > kit_button > stack[2] @216,490 28x28 absolute bg-#ffffff10 rounded-8 opacity-0
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > stack[4] > kit_button > stack[3] @222.5,496.5 15x15 flex-row
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > stack[4] > kit_button > stack[3] > svg @222.5,496.5 15x15 w-15 h-15
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#14627710763581523349] > stack[4] > kit_button > stack[3] > text[1] @222.5,489.6 64.8x28.8 absolute opacity-0
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#16007315331571565241] @18,526 236x36 flex-row pt-0 pr-10 pb-0 pl-10 h-36
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#16007315331571565241] > stack @18.5,526.5 235x35 absolute bg-#ffffff0e rounded-16 opacity-0
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#16007315331571565241] > stack[1] @18,526 236x36 absolute opacity-0
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#16007315331571565241] > stack[1] > stack @18.5,526.5 235x35 absolute bg-#232326ff rounded-16
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#16007315331571565241] > stack[1] > canvas[1] @18,526 236x36 absolute
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#16007315331571565241] > stack[2] @28,535 18x18 w-18 h-18
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#16007315331571565241] > stack[2] > svg @28,535 18x18 w-18 h-18
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#16007315331571565241] > stack[2] > svg[1] @28,535 18x18 absolute w-18 h-18 opacity-0
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#16007315331571565241] > text[3] @56,535.6 175x16.8 grow-1
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#16007315331571565241] > stack[4] @237,540.5 7x7 flex-row gap-6/6
-stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > for_each > kit_sidebar_item[#16007315331571565241] > stack[4] > stack @237,540.5 7x7 flex-row w-7 h-7 bg-#4ade80ff rounded-3.5
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack @18,486 236x76 gap-4/4
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each @18,486 236x36 gap-4/4
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] @18,486 236x36 flex-row pt-0 pr-10 pb-0 pl-10 h-36
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > stack @18.5,486.5 235x35 absolute bg-#ffffff0e rounded-16 opacity-0
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > stack[1] @18,486 236x36 absolute opacity-0
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > stack[1] > stack @18.5,486.5 235x35 absolute bg-#232326ff rounded-16
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > stack[1] > canvas[1] @18,486 236x36 absolute
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > stack[2] @28,495 18x18 w-18 h-18
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > stack[2] > svg @28,495 18x18 w-18 h-18
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > stack[2] > svg[1] @28,495 18x18 absolute w-18 h-18 opacity-0
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > text[3] @56,495.6 154x16.8 grow-1
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > stack[4] @216,490 28x28 flex-row gap-6/6
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > stack[4] > kit_button @216,490 28x28 flex-row pt-0 pr-6.5 pb-0 pl-6.5 h-28 rounded-8
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > stack[4] > kit_button > canvas @216,490 28x28 absolute
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > stack[4] > kit_button > stack[1] @216,490 28x28 absolute bg-#ffffff10 rounded-8 opacity-0
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > stack[4] > kit_button > stack[2] @216,490 28x28 absolute bg-#ffffff10 rounded-8 opacity-0
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > stack[4] > kit_button > stack[3] @222.5,496.5 15x15 flex-row
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > stack[4] > kit_button > stack[3] > svg @222.5,496.5 15x15 w-15 h-15
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each > kit_sidebar_item[#4357236573895576485] > stack[4] > kit_button > stack[3] > text[1] @222.5,489.6 64.8x28.8 absolute opacity-0
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each[1] @18,526 236x36 gap-4/4
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each[1] > kit_sidebar_item[#1651326724505920212] @18,526 236x36 flex-row pt-0 pr-10 pb-0 pl-10 h-36
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each[1] > kit_sidebar_item[#1651326724505920212] > stack @18.5,526.5 235x35 absolute bg-#ffffff0e rounded-16 opacity-0
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each[1] > kit_sidebar_item[#1651326724505920212] > stack[1] @18,526 236x36 absolute opacity-0
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each[1] > kit_sidebar_item[#1651326724505920212] > stack[1] > stack @18.5,526.5 235x35 absolute bg-#232326ff rounded-16
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each[1] > kit_sidebar_item[#1651326724505920212] > stack[1] > canvas[1] @18,526 236x36 absolute
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each[1] > kit_sidebar_item[#1651326724505920212] > stack[2] @28,535 18x18 w-18 h-18
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each[1] > kit_sidebar_item[#1651326724505920212] > stack[2] > svg @28,535 18x18 w-18 h-18
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each[1] > kit_sidebar_item[#1651326724505920212] > stack[2] > svg[1] @28,535 18x18 absolute w-18 h-18 opacity-0
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each[1] > kit_sidebar_item[#1651326724505920212] > text[3] @56,535.6 175x16.8 grow-1
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each[1] > kit_sidebar_item[#1651326724505920212] > stack[4] @237,540.5 7x7 flex-row gap-6/6
+stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[2] > kit_sidebar_section > stack[1] > stack > for_each[1] > kit_sidebar_item[#1651326724505920212] > stack[4] > stack @237,540.5 7x7 flex-row w-7 h-7 bg-#4ade80ff rounded-3.5
 stack > kit_toast_host[1] > stack > kit_sidebar_menu > spacer[3] @18,568 236x31.2 grow-1
 stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[4] @18,605.2 236x76.8 
 stack > kit_toast_host[1] > stack > kit_sidebar_menu > show[4] > kit_card @18,605.2 236x76.8 p-1 w-100% bg-#171718ff rounded-14
@@ -369,6 +371,9 @@ stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > sta
 stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack > focus_slot[1] > stack > stack[3] @266,70 615x591 absolute p-12 w-100% h-100%
 stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack > focus_slot[1] > stack > stack[3] > show @573.5,82 0x0 
 stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack > focus_slot[1] > stack > stack[3] > show > stack @573.5,82 0x0 flex-row
+stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack > focus_slot[1] > stack > stack[4] @266,70 615x591 absolute p-12 w-100% h-100%
+stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack > focus_slot[1] > stack > stack[4] > show @573.5,82 0x0 
+stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack > focus_slot[1] > stack > stack[4] > show > stack @573.5,82 0x0 flex-row
 stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[1] @881,70 1x591 w-1 bg-#232326ff
 stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] @882,70 212x591 w-212
 stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed @882,70 212x591 w-100% h-100% overflow-clip
@@ -393,14 +398,8 @@ stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > sta
 stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > stack[2] > stack[1] > stack[2] @898,342.4 180x28.6 gap-1/1
 stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > stack[2] > stack[1] > stack[2] > text @898,342.4 180x13.2 
 stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > stack[2] > stack[1] > stack[2] > text[1] @898,356.6 180x14.4 
-stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > stack[3] @898,383 180x22 flex-row gap-6/6
-stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > stack[3] > kit_tag_chip @898,383 61x22 flex-row pt-0 pr-8 pb-0 pl-8 gap-6/6 h-22 bg-#1c1c1cff rounded-11
-stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > stack[3] > kit_tag_chip > stack @906,391 6x6 w-6 h-6 bg-#8f6dfbff rounded-3
-stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > stack[3] > kit_tag_chip > text[1] @918,387.4 33x13.2 
-stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > stack[3] > kit_tag_chip[1] @965,383 61x22 flex-row pt-0 pr-8 pb-0 pl-8 gap-6/6 h-22 bg-#1c1c1cff rounded-11
-stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > stack[3] > kit_tag_chip[1] > stack @973,391 6x6 w-6 h-6 bg-#4ade80ff rounded-3
-stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > stack[3] > kit_tag_chip[1] > text[1] @985,387.4 33x13.2 
-stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > spacer[4] @898,417 180x154 grow-1
+stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > stack[3] @898,383 180x0 flex-row gap-6/6
+stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > spacer[4] @898,395 180x176 grow-1
 stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > show[5] @898,583 180x62 
 stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > show[5] > stack @898,583 180x62 flex-row gap-6/6
 stack > kit_toast_host[1] > stack > stack[1] > kit_sidebar_card[1] > stack > stack > stack[2] > keyed > stack > show[5] > stack > kit_button @898,583 56.8x28 flex-row pt-0 pr-14 pb-0 pl-14 h-28 rounded-14
@@ -439,4 +438,10 @@ stack > kit_dialog[4] > show @0,0 0x0
 stack > kit_dialog[4] > show > stack @0,0 0x0 
 stack > kit_dialog[5] @0,0 0x0 absolute
 stack > kit_dialog[5] > show @0,0 0x0 
-stack > kit_dialog[5] > show > stack @0,0 0x0
+stack > kit_dialog[5] > show > stack @0,0 0x0 
+stack > kit_dialog[6] @0,0 0x0 absolute
+stack > kit_dialog[6] > show @0,0 0x0 
+stack > kit_dialog[6] > show > stack @0,0 0x0 
+stack > kit_dialog[7] @0,0 0x0 absolute
+stack > kit_dialog[7] > show @0,0 0x0 
+stack > kit_dialog[7] > show > stack @0,0 0x0

@@ -19,6 +19,7 @@ use crate::{
     state::Store,
     util::theme::tint,
     views::{
+        drive_busy_callout::drive_busy_callout,
         elevation_callout::elevation_callout,
         file_grid::file_grid,
         file_list::file_list,
@@ -56,6 +57,7 @@ pub fn file_area(cx: &mut Cx, store: Store) -> impl View + use<> {
         rubber_band(cx, store),
         message,
         elevation_callout(cx, store),
+        drive_busy_callout(store),
     ))
     .flex_1()
     .min_w(0.0)

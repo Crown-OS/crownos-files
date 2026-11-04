@@ -4,7 +4,7 @@ use crownui::{
 };
 
 use crate::{
-    model::disk_usage::DiskUsage,
+    app::storage::{DiskSpace, Share, shares},
     state::Store,
     util::{human_size::HumanSize, theme::tint},
 };
@@ -14,19 +14,19 @@ const BAR_HEIGHT: f32 = 6.0;
 /// The sidebar's card of how full the current folder's disk is.
 pub fn storage_card(cx: &mut Cx, store: Store) -> impl View + use<> {
     let theme = use_theme(cx);
-    let usage = move |runtime: &mut Runtime| store.storage.get(runtime);
+    let space = move |runtime: &mut Runtime| store.storage.space.get(runtime);
     let body = move || {
         let percent = move |runtime: &mut Runtime| {
-            usage(runtime).map_or_else(String::new, |usage| {
-                format!("{:.0}%", (usage.used_fraction() * 100.0).floor())
+            space(runtime).map_or_else(String::new, |space| {
+                format!("{:.0}%", (space.usage.used_fraction() * 100.0).floor())
             })
         };
         let caption = move |runtime: &mut Runtime| {
-            usage(runtime).map_or_else(String::new, |usage: DiskUsage| {
+            space(runtime).map_or_else(String::new, |space: DiskSpace| {
                 format!(
                     "{} of {} used",
-                    HumanSize(usage.used()),
-                    HumanSize(usage.total)
+                    HumanSize(space.usage.used()),
+                    HumanSize(space.usage.total)
                 )
             })
         };
@@ -47,13 +47,30 @@ pub fn storage_card(cx: &mut Cx, store: Store) -> impl View + use<> {
                 .gap(8.0),
                 segmented_bar([])
                     .segments_from(move |runtime| {
-                        let (used, track) =
-                            theme.with(runtime, |theme| (theme.accent.start, theme.control.track));
-                        usage(runtime).map_or_else(Vec::new, |usage| {
-                            vec![
-                                Segment::new(usage.used() as f32, used),
-                                Segment::new(usage.available as f32, track),
-                            ]
+                        let Some(space) = space(runtime) else {
+                            return Vec::new();
+                        };
+                        let (accent, light, dim, track) = theme.with(runtime, |theme| {
+                            (
+                                theme.accent.start,
+                                theme.text.muted,
+                                theme.text.disabled,
+                                theme.control.track,
+                            )
+                        });
+                        store.storage.breakdown.with(runtime, |breakdown| {
+                            shares(space, breakdown.as_ref())
+                                .into_iter()
+                                .map(|(share, bytes)| {
+                                    let color = match share {
+                                        Share::Used | Share::Media => accent,
+                                        Share::Documents => light,
+                                        Share::Other => dim,
+                                        Share::Free => track,
+                                    };
+                                    Segment::new(bytes as f32, color)
+                                })
+                                .collect()
                         })
                     })
                     .h(BAR_HEIGHT),
@@ -68,7 +85,7 @@ pub fn storage_card(cx: &mut Cx, store: Store) -> impl View + use<> {
         .w_full()
     };
     show(
-        bind(move |runtime: &mut Runtime| usage(runtime).is_some()),
+        bind(move |runtime: &mut Runtime| space(runtime).is_some()),
         body,
         || vstack(()),
     )

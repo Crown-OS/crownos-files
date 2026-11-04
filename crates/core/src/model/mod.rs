@@ -1,8 +1,6 @@
 pub mod backstack;
 pub mod badge;
-pub mod device_entry;
 pub mod dir_stamp;
-pub mod disk_usage;
 pub mod entries;
 pub mod entry;
 pub mod files_op;

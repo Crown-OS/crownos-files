@@ -18,3 +18,4 @@ pub use monitor::DeviceMonitor;
 pub use objects::ObjectTree;
 pub use volume::{Drive, Hints, Volume};
 pub use volume_set::{Arrival, DeviceEvent, VolumeSet};
+pub use zbus::zvariant::OwnedObjectPath;

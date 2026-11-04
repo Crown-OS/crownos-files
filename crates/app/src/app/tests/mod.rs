@@ -1,8 +1,13 @@
 mod browsing;
 mod clipboard;
+mod devices;
 mod drag_drop;
 mod jobs;
 mod opening;
+mod properties;
+mod send_to;
+mod storage;
+mod tags;
 mod thumbnails;
 mod trash;
 mod window;

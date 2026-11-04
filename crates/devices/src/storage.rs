@@ -34,6 +34,14 @@ impl SpaceUsage {
     pub fn used(&self) -> u64 {
         self.total.saturating_sub(self.free)
     }
+
+    /// How much of the filesystem is used, from 0 to 1.
+    pub fn used_fraction(&self) -> f32 {
+        if self.total == 0 {
+            return 0.0;
+        }
+        (self.used() as f64 / self.total as f64) as f32
+    }
 }
 
 /// Size and free space of the filesystem `path` is on.
@@ -108,6 +116,13 @@ mod tests {
         assert!(usage.total > 0);
         assert!(usage.free <= usage.total && usage.available <= usage.free);
         assert_eq!(usage.used(), usage.total - usage.free);
+        assert!((0.0..=1.0).contains(&usage.used_fraction()));
+        let empty = SpaceUsage {
+            total: 0,
+            free: 0,
+            available: 0,
+        };
+        assert_eq!(empty.used_fraction(), 0.0);
     }
 
     #[test]

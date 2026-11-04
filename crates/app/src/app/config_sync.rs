@@ -72,6 +72,10 @@ fn apply(cx: &mut Cx, store: Store, files: &Files) {
     if store.view_mode.get(cx) != files.view_mode {
         store.view_mode.set(cx, files.view_mode);
     }
+    if store.tags.with(cx, |tags| *tags != files.tags) {
+        store.tags.set(cx, files.tags.clone());
+    }
+    store.drives.configure(cx, files);
     let sort = sort_order(files);
     let reordered = store.show_hidden.get(cx) != files.show_hidden || store.sort.get(cx) != sort;
     store.show_hidden.set(cx, files.show_hidden);

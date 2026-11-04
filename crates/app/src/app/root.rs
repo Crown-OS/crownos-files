@@ -13,6 +13,8 @@ use tokio::sync::{
 use crate::{
     app::{
         config_sync::sync_config,
+        drive_worker::run_drives,
+        drives::finish_drives,
         file_jobs::{finish_jobs, run_jobs},
         listing::apply_ops,
         navigation::load_current,
@@ -20,6 +22,7 @@ use crate::{
         opening::finish_opening,
         quick_look::{finish_quick_look, run_quick_look},
         shell::shell,
+        storage::{finish_breakdown, run_breakdown},
         tasks::{finish_tasks, run_tasks},
         thumbnails::{finish_thumbnails, run_thumbnailer},
     },
@@ -84,6 +87,25 @@ fn start_workers(cx: &mut Cx, store: Store) {
         finish_jobs(cx, store, updates)
     });
     store.jobs.sender.update(cx, |slot| *slot = Some(jobs));
+    let drives = spawn_worker(cx, run_drives, move |cx, events| {
+        finish_drives(cx, store, events);
+    });
+    store.drives.sender.update(cx, |slot| *slot = Some(drives));
+    #[cfg(feature = "connect")]
+    {
+        let peers = spawn_worker(cx, crate::app::peer_worker::run_peers, move |cx, events| {
+            crate::app::peers::finish_peers(cx, store, events);
+        });
+        store.peers.sender.update(cx, |slot| *slot = Some(peers));
+    }
+    let dirs = store.places.with(cx, |places| places.special.clone());
+    let storage = store.storage;
+    let breakdown = spawn_worker(
+        cx,
+        move |breakdowns, requests| run_breakdown(dirs, breakdowns, requests),
+        move |cx, burst| finish_breakdown(cx, storage, burst),
+    );
+    storage.sender.update(cx, |slot| *slot = Some(breakdown));
 }
 
 async fn serve_engine(ops: UnboundedSender<FilesOp>, commands: UnboundedReceiver<EngineCmd>) {

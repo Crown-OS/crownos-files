@@ -6,14 +6,16 @@ use crownui::{
 use crate::{
     app::{
         conflicts::follow_dismissal, keys::handle_key, listing::reorder,
-        quick_look::follow_selection, thumbnails::follow_visible,
+        properties::follow_properties_dismissal, quick_look::follow_selection,
+        tagging::follow_visible_tags, thumbnails::follow_visible, unlock::follow_unlock_dismissal,
     },
     state::Store,
     util::theme::{tint, with_translucency_factor},
     views::{
         conflict_dialog::conflict_dialog, delete_dialog::delete_dialog, details::details,
         file_area::file_area, file_menu::file_menu, metrics::DETAILS_WIDTH,
-        open_with_dialog::open_with_dialog, sidebar::sidebar, status_bar::status_bar,
+        open_with_dialog::open_with_dialog, passphrase_dialog::passphrase_dialog,
+        properties_dialog::properties_dialog, sidebar::sidebar, status_bar::status_bar,
         toolbar::toolbar,
     },
 };
@@ -31,6 +33,9 @@ pub fn shell(cx: &mut Cx, store: Store) -> impl View + use<> {
     follow_visible(cx, store);
     follow_selection(cx, store);
     follow_dismissal(cx, store);
+    follow_visible_tags(cx, store);
+    follow_unlock_dismissal(cx, store);
+    follow_properties_dismissal(cx, store);
     let theme = use_theme(cx);
     let hairline = move || {
         vstack(())
@@ -62,6 +67,8 @@ pub fn shell(cx: &mut Cx, store: Store) -> impl View + use<> {
         conflict_dialog(store),
         delete_dialog(store),
         open_with_dialog(store),
+        passphrase_dialog(store),
+        properties_dialog(store),
     ))
     .font_family(INTER_FAMILY)
     .on_key_down(move |cx, event| handle_key(cx, store, event))

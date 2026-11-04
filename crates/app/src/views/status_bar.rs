@@ -30,16 +30,16 @@ pub fn status_bar(cx: &mut Cx, store: Store) -> impl View + use<> {
     let free = move || {
         hstack((
             progress(bind(move |runtime: &mut Runtime| {
-                store.storage.with(runtime, |usage| {
-                    usage.map_or(0.0, |usage| usage.used_fraction())
+                store.storage.space.with(runtime, |space| {
+                    space.map_or(0.0, |space| space.usage.used_fraction())
                 })
             }))
             .w(METER_WIDTH)
             .h(METER_HEIGHT),
             text(bind(move |runtime: &mut Runtime| {
-                store.storage.with(runtime, |usage| {
-                    usage.map_or_else(String::new, |usage| {
-                        format!("{} available", HumanSize(usage.available))
+                store.storage.space.with(runtime, |space| {
+                    space.map_or_else(String::new, |space| {
+                        format!("{} available", HumanSize(space.usage.available))
                     })
                 })
             })),
@@ -51,7 +51,7 @@ pub fn status_bar(cx: &mut Cx, store: Store) -> impl View + use<> {
         text(bind(summary)),
         spacer(),
         show(
-            bind(move |runtime: &mut Runtime| store.storage.with(runtime, Option::is_some)),
+            bind(move |runtime: &mut Runtime| store.storage.space.with(runtime, Option::is_some)),
             free,
             || hstack(()),
         ),

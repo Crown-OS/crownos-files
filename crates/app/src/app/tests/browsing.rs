@@ -235,7 +235,6 @@ fn the_details_panel_describes_the_selection() {
             .app
             .exists(role(Role::Button).name("Send to Pixel 9 Pro"))
     );
-    assert!(window.app.count(text("Final")) == 1);
     window.click_with("benchmarks.csv", CTRL);
     assert!(window.shows(text("2 items")));
 }

@@ -15,18 +15,12 @@ use crate::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Deferred {
     Compress,
-    Tags,
-    SendToDevice,
-    Properties,
 }
 
 impl Deferred {
     fn label(self) -> &'static str {
         match self {
             Self::Compress => "Compress",
-            Self::Tags => "Tags",
-            Self::SendToDevice => "Send to device",
-            Self::Properties => "Properties",
         }
     }
 }

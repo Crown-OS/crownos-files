@@ -3,6 +3,7 @@
 use std::path::Path;
 
 use crownconfig::TagColor;
+use crownos_files_devices::tags::Tags;
 use crownui::{
     kit::{ButtonOptions, ButtonSize, ButtonVariant, Theme, button, icons, tag_chip, use_theme},
     prelude::{
@@ -13,9 +14,7 @@ use crownui::{
 
 use crate::{
     app::{
-        actions::{Deferred, deferred},
-        opening::open_selection,
-        thumbnails::thumb_source,
+        opening::open_selection, peers::send_selection, thumbnails::thumb_source,
         virtual_folder::VirtualFolder,
     },
     model::{entry::Entry, places::Places, trash::TrashedItem},
@@ -39,6 +38,7 @@ struct Description {
     title: String,
     subtitle: String,
     rows: Vec<(&'static str, String)>,
+    tags: Tags,
     is_entry: bool,
 }
 
@@ -48,10 +48,11 @@ pub fn details(store: Store) -> impl View {
             (
                 store.revision.get(runtime),
                 store.selection_rev.get(runtime),
+                store.tagging.revision.get(runtime),
                 store.tags.get(runtime),
             )
         },
-        move |cx, (_, _, tags)| panel(cx, store, tags),
+        move |cx, (_, _, _, palette)| panel(cx, store, &palette),
     )
     .flex_col()
     .w_full()
@@ -62,7 +63,7 @@ pub fn details(store: Store) -> impl View {
     .label("Details")
 }
 
-fn panel(cx: &mut Cx, store: Store, tags: Vec<TagColor>) -> impl View + use<> {
+fn panel(cx: &mut Cx, store: Store, palette: &[TagColor]) -> impl View + use<> {
     let theme = use_theme(cx);
     let description = describe(cx, store);
     let preview = vstack(entry_picture(
@@ -98,9 +99,10 @@ fn panel(cx: &mut Cx, store: Store, tags: Vec<TagColor>) -> impl View + use<> {
         .map(|(label, value)| info_row(theme, label, value).boxed())
         .collect();
     let info = vstack((hairline(theme), vstack(rows).gap(8.0))).gap(12.0);
-    let chips: Vec<AnyView> = tags
-        .into_iter()
-        .map(|tag| tag_chip(tag.name, rgb(tag.rgb)).boxed())
+    let chips: Vec<AnyView> = description
+        .tags
+        .iter()
+        .map(|tag| chip(theme, palette, tag))
         .collect();
     let actions = show(description.is_entry, move || actions(store), || hstack(()));
     vstack((
@@ -116,6 +118,17 @@ fn panel(cx: &mut Cx, store: Store, tags: Vec<TagColor>) -> impl View + use<> {
     .w_full()
     .h_full()
     .min_h(0.0)
+}
+
+/// A chip in the configured color of `tag`, or the neutral one.
+fn chip(theme: Signal<Theme>, palette: &[TagColor], tag: &str) -> AnyView {
+    match palette
+        .iter()
+        .find(|known| known.name.eq_ignore_ascii_case(tag))
+    {
+        Some(known) => tag_chip(tag, rgb(known.rgb)).boxed(),
+        None => tag_chip(tag, tint(theme, |theme| theme.status.neutral)).boxed(),
+    }
 }
 
 fn hairline(theme: Signal<Theme>) -> impl View {
@@ -139,14 +152,8 @@ fn info_row(theme: Signal<Theme>, label: &'static str, value: String) -> impl Vi
 }
 
 fn actions(store: Store) -> impl View {
-    let receiver = move |runtime: &mut Runtime| {
-        store.devices.with(runtime, |devices| {
-            devices
-                .iter()
-                .find(|device| device.can_receive_files())
-                .map(|device| device.name.clone())
-        })
-    };
+    let receiver =
+        move |runtime: &mut Runtime| store.peers.first_phone(runtime).map(|phone| phone.name);
     hstack((
         button("Open")
             .variant(ButtonVariant::Primary)
@@ -161,7 +168,11 @@ fn actions(store: Store) -> impl View {
                 .variant(ButtonVariant::Secondary)
                 .control_size(ButtonSize::Small)
                 .leading_icon(icons::SMARTPHONE)
-                .on_click(move |cx, _| deferred(cx, store, Deferred::SendToDevice))
+                .on_click(move |cx, _| {
+                    if let Some(phone) = store.peers.first_phone(cx) {
+                        send_selection(cx, store, &phone);
+                    }
+                })
             },
             || hstack(()),
         ),
@@ -189,7 +200,9 @@ fn describe(runtime: &Runtime, store: Store) -> Description {
                         }),
                         None => location,
                     };
-                    describe_entry(entry, dir, places, today, location)
+                    let mut description = describe_entry(entry, dir, places, today, location);
+                    description.tags = store.tagging.of(runtime, &entry.name);
+                    description
                 }
                 (Some(_), Some(_)) => {
                     let total: u64 = folder.selected_entries().map(|entry| entry.stat.len).sum();
@@ -199,6 +212,7 @@ fn describe(runtime: &Runtime, store: Store) -> Description {
                         title: format!("{} items", folder.selection().len()),
                         subtitle: HumanSize(total).to_string(),
                         rows: vec![("Where", location)],
+                        tags: Tags::new(),
                         is_entry: true,
                     }
                 }
@@ -218,6 +232,7 @@ fn describe(runtime: &Runtime, store: Store) -> Description {
                     },
                     subtitle: format!("Folder · {} items", folder.len()),
                     rows: vec![("Where", location)],
+                    tags: Tags::new(),
                     is_entry: false,
                 },
             }
@@ -271,6 +286,7 @@ fn describe_entry(
         title: entry.name.to_string(),
         subtitle: format!("{} · {}", kind_label(entry), size_label(entry)),
         rows,
+        tags: Tags::new(),
         is_entry: true,
     }
 }

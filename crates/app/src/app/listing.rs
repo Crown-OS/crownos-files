@@ -2,10 +2,11 @@
 //! options, and telling the views when to redraw.
 
 use compact_str::CompactString;
+use crownos_files_devices::tags::SearchQuery;
 use crownui::prelude::Runtime;
 
 use crate::{
-    app::editing::start_rename,
+    app::{editing::start_rename, tagging::tagged_names},
     model::{files_op::FilesOp, filter::Filter, view_options::ViewOptions},
     state::Store,
 };
@@ -21,13 +22,17 @@ pub enum AfterChange {
 pub fn apply_ops(runtime: &mut Runtime, store: Store, ops: Vec<FilesOp>) {
     let current = store.dir(runtime);
     let mut changed = false;
+    let mut relisted = false;
     for op in FilesOp::merge(ops) {
         if *op.dir() == current {
-            changed |= store.folder.update(runtime, |folder| {
+            let sized = matches!(op, FilesOp::Size { .. });
+            let applied = store.folder.update(runtime, |folder| {
                 let before = folder.revision();
                 folder.apply(op);
                 folder.revision() != before
             });
+            changed |= applied;
+            relisted |= applied && !sized;
         } else {
             store.history.update(runtime, |history| {
                 if let Some(folder) = history.get_mut(op.dir()) {
@@ -35,6 +40,9 @@ pub fn apply_ops(runtime: &mut Runtime, store: Store, ops: Vec<FilesOp>) {
                 }
             });
         }
+    }
+    if relisted {
+        store.tagging.forget(runtime);
     }
     if changed {
         publish(runtime, store);
@@ -44,10 +52,20 @@ pub fn apply_ops(runtime: &mut Runtime, store: Store, ops: Vec<FilesOp>) {
 
 /// The view options the toolbar and config ask for, with the search box's filter.
 pub fn view_options(runtime: &mut Runtime, store: Store) -> ViewOptions {
+    let query = store.query.get(runtime);
+    let search = SearchQuery::parse(&query);
+    let filter = if search.has_tags() {
+        Some(Filter::among(
+            &search.text,
+            tagged_names(runtime, store, &search),
+        ))
+    } else {
+        Filter::new(&query)
+    };
     ViewOptions {
         sort: store.sort.get(runtime),
         show_hidden: store.show_hidden.get(runtime),
-        filter: store.query.with(runtime, |query| Filter::new(query)),
+        filter,
     }
 }
 

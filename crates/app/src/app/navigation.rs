@@ -96,7 +96,8 @@ fn request_listing(
         },
     );
     store.send(runtime, EngineCmd::Watch(vec![dir.clone()]));
-    store.run(runtime, Task::MeasureDisk(dir));
+    let home = store.places.with(runtime, |places| places.home.clone());
+    store.run(runtime, Task::MeasureDisk { dir, home });
 }
 
 fn enter(runtime: &mut Runtime, store: Store, dir: Arc<Path>) {

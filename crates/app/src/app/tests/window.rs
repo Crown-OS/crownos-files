@@ -15,11 +15,14 @@ use tokio::sync::mpsc::{UnboundedReceiver, unbounded_channel};
 
 use crate::{
     app::{
+        drive_worker::DriveCommand,
         file_jobs::JobCommand,
         fixtures::{mockup_home, mockup_store},
         opener::OpenCommand,
+        peers::PeerCommand,
         quick_look::QuickLookCommand,
         shell::shell,
+        storage::MeasureBreakdown,
         tasks::Task,
         thumbnails::ThumbCommand,
     },
@@ -68,6 +71,9 @@ pub struct Workers {
     pub opener: UnboundedReceiver<OpenCommand>,
     pub viewer: UnboundedReceiver<QuickLookCommand>,
     pub jobs: UnboundedReceiver<JobCommand>,
+    pub drives: UnboundedReceiver<DriveCommand>,
+    pub peers: UnboundedReceiver<PeerCommand>,
+    pub breakdown: UnboundedReceiver<MeasureBreakdown>,
 }
 
 pub struct Window {
@@ -86,6 +92,9 @@ pub fn window_with(theme: Theme) -> Window {
     let (opener, open_commands) = unbounded_channel();
     let (viewer, viewer_commands) = unbounded_channel();
     let (jobs, job_commands) = unbounded_channel();
+    let (drives, drive_commands) = unbounded_channel();
+    let (peers, peer_commands) = unbounded_channel();
+    let (breakdown, breakdown_requests) = unbounded_channel();
     let built = Rc::new(Cell::new(None));
     let slot = built.clone();
     let mut app = TestApp::with_size(
@@ -107,6 +116,18 @@ pub fn window_with(theme: Theme) -> Window {
                 .sender
                 .update(cx, |sender| *sender = Some(viewer));
             store.jobs.sender.update(cx, |sender| *sender = Some(jobs));
+            store
+                .drives
+                .sender
+                .update(cx, |sender| *sender = Some(drives));
+            store
+                .peers
+                .sender
+                .update(cx, |sender| *sender = Some(peers));
+            store
+                .storage
+                .sender
+                .update(cx, |sender| *sender = Some(breakdown));
             slot.set(Some(store));
             shell(cx, store)
         }),
@@ -124,6 +145,9 @@ pub fn window_with(theme: Theme) -> Window {
             opener: open_commands,
             viewer: viewer_commands,
             jobs: job_commands,
+            drives: drive_commands,
+            peers: peer_commands,
+            breakdown: breakdown_requests,
         },
         store,
         home,
