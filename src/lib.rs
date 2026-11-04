@@ -3,5 +3,6 @@
 
 pub mod error;
 pub mod fs;
+pub mod jobs;
 pub mod model;
 pub mod util;

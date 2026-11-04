@@ -89,6 +89,7 @@ dependencies = [
  "foldhash",
  "hashbrown",
  "indexmap",
+ "libc",
  "memchr",
  "notify",
  "rayon",

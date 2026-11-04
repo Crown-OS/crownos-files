@@ -15,4 +15,5 @@ pub mod special_dir;
 pub mod stat;
 pub mod ticket;
 pub mod timestamp;
+pub mod trash;
 pub mod view_options;

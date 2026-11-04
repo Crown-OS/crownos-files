@@ -35,16 +35,22 @@ pub fn path_to_uri(path: &Path) -> String {
     let bytes = path.as_os_str().as_bytes();
     let mut uri = String::with_capacity(FILE_SCHEME.len() + bytes.len());
     uri.push_str("file://");
+    percent_encode(bytes, &mut uri);
+    uri
+}
+
+/// Appends `bytes` to `out`, escaping everything but unreserved characters
+/// and `/`, as URIs and `.trashinfo` paths expect.
+pub fn percent_encode(bytes: &[u8], out: &mut String) {
     for &byte in bytes {
         if byte.is_ascii_alphanumeric() || b"-_.~/".contains(&byte) {
-            uri.push(char::from(byte));
+            out.push(char::from(byte));
         } else {
-            uri.push('%');
-            uri.push(char::from(HEX_DIGITS[usize::from(byte >> 4)]));
-            uri.push(char::from(HEX_DIGITS[usize::from(byte & 0xF)]));
+            out.push('%');
+            out.push(char::from(HEX_DIGITS[usize::from(byte >> 4)]));
+            out.push(char::from(HEX_DIGITS[usize::from(byte & 0xF)]));
         }
     }
-    uri
 }
 
 /// One `file://` URI per line, CRLF-terminated, for the clipboard and drags.
@@ -56,7 +62,7 @@ pub fn uri_list<'a>(paths: impl IntoIterator<Item = &'a Path>) -> String {
     })
 }
 
-fn percent_decode(input: &[u8]) -> Vec<u8> {
+pub fn percent_decode(input: &[u8]) -> Vec<u8> {
     let mut decoded = Vec::with_capacity(input.len());
     let mut rest = input;
     while let Some((&byte, tail)) = rest.split_first() {

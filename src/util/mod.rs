@@ -1,6 +1,8 @@
+pub mod clipboard_payload;
 pub mod extension;
 pub mod hash;
 pub mod human_size;
+pub mod local_time;
 pub mod natsort;
 pub mod throttle;
 pub mod uri;
