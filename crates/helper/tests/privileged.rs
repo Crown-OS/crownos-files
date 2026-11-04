@@ -19,6 +19,9 @@ fn fake_launcher(dir: &Path, exit_code: i32) -> PrivilegedClient {
 
 #[tokio::test]
 async fn the_helper_binary_runs_requests_without_pkexec() {
+    if rustix::process::geteuid().is_root() {
+        return;
+    }
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path().canonicalize().unwrap();
     std::fs::write(root.join("note"), b"hi").unwrap();

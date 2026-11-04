@@ -687,6 +687,7 @@ dependencies = [
  "anyhow",
  "crownos-files-core",
  "crownos-files-devices",
+ "rustix",
  "tempfile",
  "tokio",
  "tokio-util",

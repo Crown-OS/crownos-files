@@ -403,6 +403,9 @@ async fn guards_refuse_impossible_operations() {
     ));
     assert!(!folder.join("child/folder").exists());
 
+    if rustix::process::geteuid().is_root() {
+        return;
+    }
     let read_only = temp.path().join("read-only");
     fs::create_dir(&read_only).unwrap();
     fs::set_permissions(&read_only, fs::Permissions::from_mode(0o555)).unwrap();
