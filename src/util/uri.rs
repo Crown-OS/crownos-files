@@ -10,6 +10,9 @@ use std::{
 const FILE_SCHEME: &[u8] = b"file://";
 const LOCALHOST: &[u8] = b"localhost";
 const HEX_DIGITS: &[u8; 16] = b"0123456789ABCDEF";
+const UNRESERVED_PUNCTUATION: &[u8] = b"-_.~/";
+/// What GLib's `g_filename_to_uri` leaves unescaped besides alphanumerics.
+const GLIB_PATH_PUNCTUATION: &[u8] = b"!$&'()*+,-./:=@_~";
 
 /// The paths in a `text/uri-list` payload, skipping blank lines and comments.
 pub fn parse_uri_list(payload: &[u8]) -> impl Iterator<Item = PathBuf> + '_ {
@@ -39,11 +42,26 @@ pub fn path_to_uri(path: &Path) -> String {
     uri
 }
 
+/// The URI GLib spells for `path`. The thumbnail cache and
+/// `recently-used.xbel` are keyed on this exact text, so it must match what
+/// GTK apps write byte for byte.
+pub fn glib_file_uri(path: &Path) -> String {
+    let bytes = path.as_os_str().as_bytes();
+    let mut uri = String::with_capacity(FILE_SCHEME.len() + bytes.len());
+    uri.push_str("file://");
+    encode_keeping(bytes, GLIB_PATH_PUNCTUATION, &mut uri);
+    uri
+}
+
 /// Appends `bytes` to `out`, escaping everything but unreserved characters
 /// and `/`, as URIs and `.trashinfo` paths expect.
 pub fn percent_encode(bytes: &[u8], out: &mut String) {
+    encode_keeping(bytes, UNRESERVED_PUNCTUATION, out);
+}
+
+fn encode_keeping(bytes: &[u8], punctuation: &[u8], out: &mut String) {
     for &byte in bytes {
-        if byte.is_ascii_alphanumeric() || b"-_.~/".contains(&byte) {
+        if byte.is_ascii_alphanumeric() || punctuation.contains(&byte) {
             out.push(char::from(byte));
         } else {
             out.push('%');
@@ -122,6 +140,19 @@ mod tests {
         let payload = b"# comment\r\nfile:///a\r\n\r\nfile:///b%20c\r\n";
         let paths: Vec<_> = parse_uri_list(payload).collect();
         assert_eq!(paths, [PathBuf::from("/a"), PathBuf::from("/b c")]);
+    }
+
+    #[test]
+    fn glib_uris_keep_sub_delimiters_like_g_filename_to_uri() {
+        let path = Path::new("/tmp/a b(1)!$&'*+,;=:@[]{}#?%~^`\u{e9}.png");
+        assert_eq!(
+            glib_file_uri(path),
+            "file:///tmp/a%20b(1)!$&'*+,%3B=:@%5B%5D%7B%7D%23%3F%25~%5E%60%C3%A9.png"
+        );
+        assert_eq!(
+            uri_to_path(glib_file_uri(path).as_bytes()).as_deref(),
+            Some(path)
+        );
     }
 
     #[test]

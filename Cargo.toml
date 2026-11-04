@@ -3,17 +3,43 @@ name = "crownos-files"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["thumbs-pdf", "thumbs-video"]
+thumbs-pdf = ["dep:poppler-rs", "dep:cairo-rs"]
+thumbs-video = ["dep:gstreamer", "dep:gstreamer-app", "dep:gstreamer-video"]
+
 [dependencies]
 anyhow = "1"
 bitflags = "2.13"
+cairo-rs = { version = "0.22", optional = true }
 compact_str = "0.10"
+crownos-ipc = { path = "../crownos-ipc", features = ["tokio"] }
+crownos-preview = { path = "../crownos-preview", default-features = false }
+fast_image_resize = "6.1"
 foldhash = "0.2"
+freedesktop_entry_parser = "1.3"
+gstreamer = { version = "0.25", optional = true }
+gstreamer-app = { version = "0.25", optional = true }
+gstreamer-video = { version = "0.25", optional = true }
 hashbrown = "0.17"
+image = { version = "0.25", default-features = false, features = [
+  "bmp",
+  "gif",
+  "ico",
+  "png",
+  "tiff",
+  "webp",
+] }
 indexmap = "2.14"
 libc = "0.2"
+md-5 = "0.10"
 memchr = "2.8"
 notify = { version = "8.2", default-features = false }
+png = "0.18"
+poppler-rs = { version = "0.26", optional = true }
+quick-xml = "0.39"
 rayon = "1.12"
+resvg = { version = "0.48", default-features = false }
 rustix = { version = "1.1", features = ["fs", "event", "process"] }
 thiserror = "2"
 tokio = { version = "1.54", default-features = false, features = [
@@ -24,6 +50,7 @@ tokio = { version = "1.54", default-features = false, features = [
   "time",
 ] }
 tokio-util = { version = "0.7.20", default-features = false, features = ["rt"] }
+turbojpeg = { version = "1.5", default-features = false, features = ["pkg-config"] }
 
 [dev-dependencies]
 tempfile = "3.27"

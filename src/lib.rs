@@ -4,5 +4,9 @@
 pub mod error;
 pub mod fs;
 pub mod jobs;
+pub mod mime;
 pub mod model;
+pub mod open;
+pub mod preview;
+pub mod thumbs;
 pub mod util;
