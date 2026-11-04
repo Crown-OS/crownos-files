@@ -1,0 +1,34 @@
+[package]
+name = "crownos-files"
+description = "The CrownOS file manager"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[features]
+default = ["thumbs-pdf", "thumbs-video", "connect"]
+thumbs-pdf = ["crownos-files-core/thumbs-pdf"]
+thumbs-video = ["crownos-files-core/thumbs-video"]
+connect = ["crownos-files-devices/connect"]
+
+[dependencies]
+anyhow.workspace = true
+compact_str.workspace = true
+crownconfig.workspace = true
+crownos-files-core.workspace = true
+crownos-files-devices.workspace = true
+crownui.workspace = true
+tikv-jemallocator.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+crowntest.workspace = true
+impeller.workspace = true
+insta.workspace = true
+taffy-layout.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

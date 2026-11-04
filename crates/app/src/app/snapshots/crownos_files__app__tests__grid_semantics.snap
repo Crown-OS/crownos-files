@@ -1,0 +1,118 @@
+---
+source: crates/app/src/app/tests.rs
+expression: window.app.semantics_snapshot()
+---
+window @0,0 1100x700
+  image @28,29 22x22
+  text "Files" @60,31 184x18
+  text "Favorites" @28,68 216x14.4
+  menu_item "Recents" @18,96 236x36
+  menu_item "Home" @18,136 236x36
+  menu_item "Desktop" @18,176 236x36
+  menu_item "Documents" @18,216 236x36
+  menu_item "Downloads" @18,256 236x36
+  menu_item "Pictures" @18,296 236x36
+  menu_item "Videos" @18,336 236x36
+  menu_item "Music" @18,376 236x36
+  menu_item "Trash" @18,416 236x36
+  text "Devices" @28,458 216x14.4
+  list @18,486 236x76
+    menu_item "CrownBook Eject CrownBook" @18,486 236x36
+    menu_item "Pixel 9 Pro" @18,526 236x36
+  image @31,618.5 15x15
+  text "Storage" @54,618.2 54.6x15.6
+  text "58%" @219.4,618.8 21.6x14.4
+  text "588 GB of 1 TB used" @31,655.8 210x13.2
+  button "Back" [disabled] @266,18 28x28
+  button "Forward" [disabled] @302,18 28x28
+  group "Path" @338,22.6 522x24.8
+    button "More" @338,23 28x24
+    button "Documents" @384,22.6 87.6x24.8
+    button "Launch" @489.6,22.6 62.4x24.8
+  group "View" value="Icons" @868,18 82x28
+    radio_button "Icons" [checked] @870,20 39x24
+      image @882,24.5 15x15
+    radio_button "List" @909,20 39x24
+      image @921,24.5 15x15
+  combo_box "Search" @958,18 136x34
+    search_field "Search" value="" @958,18 136x34
+  list "Files" [focused] @266,70 615x591
+    scroll_view @266,70 615x591
+      list @266,70 615x364
+        list_item "Brand" value="" @278,82 93.5x112
+          text "Brand" @300.75,152 48x18.4
+          text "186 MB" @304.95,174.4 39.6x13.2
+        list_item "Press Kit" value="" @377.5,82 93.5x112
+          image @415.25,115 18x18
+          text "Press Kit" @385.85,152 76.8x18.4
+          text "312 MB" @404.45,174.4 39.6x13.2
+        list_item "Renders" value="" @477,82 93.5x112
+          image @514.75,115 18x18
+          text "Renders" @492.55,152 62.4x18.4
+          text "4.8 GB" @503.95,174.4 39.6x13.2
+        list_item "Soundtrack" value="" @576.5,82 93.5x112
+          image @614.25,115 18x18
+          text "Soundtrack" @581.25,152 84x18.4
+          text "1.1 GB" @603.45,174.4 39.6x13.2
+        list_item "aurora-wallpaper.avif" value="" @676,82 93.5x112
+          text "aurora-wallpaper.avif" @678,152 89.5x18.4
+          text "3.8 MB" @702.95,174.4 39.6x13.2
+        list_item "benchmarks.csv" value="" @775.5,82 93.5x112
+          text "CSV" @811.5,132 21.5x9
+          text "benchmarks.csv" @777.5,152 89.5x18.4
+          text "220 KB" @802.45,174.4 39.6x13.2
+        list_item "compositor.rs" value="" @278,196 93.5x112
+          text "RS" @316.25,246 17x9
+          text "compositor.rs" @280,266 89.5x18.4
+          text "48 KB" @308.25,288.4 33x13.2
+        list_item "crownbook-hero.png" value="" @377.5,196 93.5x112
+          text "crownbook-hero.png" @379.5,266 89.5x18.4
+          text "6.1 MB" @404.45,288.4 39.6x13.2
+        list_item "crownos-2026.11-x86_64.iso" value="" @477,196 93.5x112
+          text "crownos-2026.11-x86_64.iso" @479,266 89.5x18.4
+          text "2.4 GB" @503.95,288.4 39.6x13.2
+        list_item "interview.flac" value="selected" @576.5,196 93.5x112
+          text "FLAC" @610.25,246 26x9
+          text "interview.flac" @578.5,266 89.5x18.4
+          text "43 MB" @606.75,288.4 33x13.2
+        list_item "keynote.pdf" value="" @676,196 93.5x112
+          text "PDF" @712,246 21.5x9
+          text "keynote.pdf" @678,266 89.5x18.4
+          text "18 MB" @706.25,288.4 33x13.2
+        list_item "launch-assets.tar.zst" value="" @775.5,196 93.5x112
+          text "launch-assets.tar.zst" @777.5,266 89.5x18.4
+          text "640 MB" @802.45,288.4 39.6x13.2
+        list_item "launch-film.webm" value="" @278,310 93.5x112
+          text "launch-film.webm" @280,380 89.5x18.4
+          text "84 MB" @308.25,402.4 33x13.2
+        list_item "launch-plan.odt" value="" @377.5,310 93.5x112
+          text "ODT" @413.5,360 21.5x9
+          text "launch-plan.odt" @379.5,380 89.5x18.4
+          text "86 KB" @407.75,402.4 33x13.2
+        list_item "palette.svg" value="" @477,310 93.5x112
+          text "SVG" @513,360 21.5x9
+          text "palette.svg" @479,380 89.5x18.4
+          text "4 KB" @510.55,402.4 26.4x13.2
+        list_item "release-notes.md" value="" @576.5,310 93.5x112
+          text "MD" @614.75,360 17x9
+          text "release-notes.md" @578.5,380 89.5x18.4
+          text "12 KB" @606.75,402.4 33x13.2
+    text "" [offscreen] @573.5,357.1 0x16.8
+  group "Details" @882,70 212x591
+    text "FLAC" @969.15,163.75 37.7x13.05
+    text "interview.flac" @898,210 180x16.8
+    text "FLAC audio · 43 MB" @898,229.8 180x14.4
+    text "Modified" @898,269.2 180x13.2
+    text "Oct 24, 2026" @898,283.4 180x14.4
+    text "Created" @898,305.8 180x13.2
+    text "Oct 24, 2026" @898,320 180x14.4
+    text "Where" @898,342.4 180x13.2
+    text "Documents › Launch" @898,356.6 180x14.4
+    text "Brand" @918,387.4 33x13.2
+    text "Final" @985,387.4 33x13.2
+    button "Open" @898,583 56.8x28
+    button "Send to Pixel 9 Pro" @898,617 183.8x28
+  text "16 items, 1 selected" @282,670.8 144x14.4
+  progress_bar value="59%" @882.8,670.8 72x6
+  text "412 GB available" @962.8,670.8 115.2x14.4
+  list [offscreen] @550,676 0x0

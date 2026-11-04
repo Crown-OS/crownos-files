@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Files
+Comment=Browse and manage your files
+Exec=crownos-files %U
+Icon=system-file-manager
+Terminal=false
+Categories=System;FileTools;FileManager;
+MimeType=inode/directory;
+StartupWMClass=crownos-files

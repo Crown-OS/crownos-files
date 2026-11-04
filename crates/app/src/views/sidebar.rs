@@ -1,0 +1,158 @@
+//! The sidebar: brand, favorite places, devices and the storage card.
+
+use std::{path::Path, sync::Arc};
+
+use crownui::{
+    kit::{
+        SidebarItemOptions, icon_button, icons, sidebar_brand, sidebar_item, sidebar_section,
+        use_theme,
+    },
+    prelude::{
+        AnyView, Cx, Listeners, Runtime, Signal, Styled, View, ViewSeq, bind, for_each, hstack,
+        show, spacer, vstack,
+    },
+};
+
+use crate::{
+    app::{
+        actions::{Deferred, deferred},
+        navigation::open_dir,
+    },
+    model::{
+        device_entry::{DeviceEntry, DeviceKind},
+        places::Places,
+        special_dir::SpecialDir,
+    },
+    state::Store,
+    util::theme::tint,
+    views::storage_card::storage_card,
+};
+
+const STATUS_DOT: f32 = 7.0;
+
+pub fn sidebar(cx: &mut Cx, store: Store) -> impl ViewSeq + use<> {
+    (
+        sidebar_brand("Files", icons::FOLDER),
+        favorites(cx, store),
+        devices(store),
+        spacer(),
+        storage_card(cx, store),
+    )
+}
+
+fn favorites(cx: &mut Cx, store: Store) -> impl View + use<> {
+    let rows: Vec<AnyView> = store.places.with(cx, |places| {
+        let special = |dir| places.path(dir).map(Arc::<Path>::from);
+        let candidates = [
+            ("Recents", icons::CLOCK, None),
+            ("Home", icons::HOUSE, places.home.as_deref().map(Arc::from)),
+            ("Desktop", icons::MONITOR, special(SpecialDir::Desktop)),
+            (
+                "Documents",
+                icons::FILE_TEXT,
+                special(SpecialDir::Documents),
+            ),
+            ("Downloads", icons::DOWNLOAD, special(SpecialDir::Downloads)),
+            ("Pictures", icons::IMAGE, special(SpecialDir::Pictures)),
+            ("Videos", icons::VIDEO, special(SpecialDir::Videos)),
+            ("Music", icons::MUSIC, special(SpecialDir::Music)),
+            ("Trash", icons::TRASH_2, trash(places)),
+        ];
+        candidates
+            .into_iter()
+            .filter(|(label, _, dir)| {
+                *label == "Recents" || dir.as_deref().is_some_and(Path::is_dir)
+            })
+            .map(|(label, icon, dir)| place(store, label, icon, dir))
+            .collect()
+    });
+    sidebar_section("Favorites", rows)
+}
+
+fn trash(places: &Places) -> Option<Arc<Path>> {
+    places.trash.as_deref().map(Arc::from)
+}
+
+fn place(store: Store, label: &'static str, icon: &'static str, dir: Option<Arc<Path>>) -> AnyView {
+    let current = dir.clone();
+    sidebar_item(
+        label,
+        icon,
+        bind(move |runtime: &mut Runtime| {
+            current
+                .as_ref()
+                .is_some_and(|dir| store.cwd.with(runtime, |cwd| cwd == dir))
+        }),
+    )
+    .on_click(move |cx, _| match &dir {
+        Some(dir) => open_dir(cx, store, dir.clone()),
+        None => deferred(cx, store, Deferred::Recents),
+    })
+    .boxed()
+}
+
+fn devices(store: Store) -> impl View {
+    show(
+        bind(move |runtime: &mut Runtime| {
+            store.devices.with(runtime, |devices| !devices.is_empty())
+        }),
+        move || {
+            sidebar_section(
+                "Devices",
+                for_each(
+                    store.devices,
+                    |device: &DeviceEntry| device.name.clone(),
+                    move |cx, device| device_row(cx, store, device),
+                )
+                .flex_col()
+                .gap(4.0),
+            )
+        },
+        || vstack(()),
+    )
+    .flex_col()
+}
+
+fn device_row(cx: &mut Cx, store: Store, device: Signal<DeviceEntry>) -> AnyView {
+    let theme = use_theme(cx);
+    let entry = device.get(cx);
+    match entry.kind {
+        DeviceKind::Drive => {
+            let mount = entry.mount.clone();
+            let selected = mount.clone();
+            sidebar_item(
+                entry.name.clone(),
+                icons::HARD_DRIVE,
+                bind(move |runtime: &mut Runtime| {
+                    selected
+                        .as_ref()
+                        .is_some_and(|dir| store.cwd.with(runtime, |cwd| cwd == dir))
+                }),
+            )
+            .trailing(icon_button(
+                icons::ARROW_UP_FROM_LINE,
+                format!("Eject {}", entry.name),
+            ))
+            .on_click(move |cx, _| {
+                if let Some(dir) = &mount {
+                    open_dir(cx, store, dir.clone());
+                }
+            })
+            .boxed()
+        }
+        DeviceKind::Phone => sidebar_item(entry.name, icons::SMARTPHONE, false)
+            .trailing(
+                hstack(())
+                    .size(STATUS_DOT)
+                    .rounded(STATUS_DOT / 2.0)
+                    .bg(tint(theme, move |theme| {
+                        if entry.online {
+                            theme.status.success
+                        } else {
+                            theme.status.neutral
+                        }
+                    })),
+            )
+            .boxed(),
+    }
+}

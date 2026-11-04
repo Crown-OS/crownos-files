@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
-members = ["crates/core", "crates/devices", "crates/helper"]
-default-members = ["crates/helper"]
+members = ["crates/core", "crates/devices", "crates/helper", "crates/app"]
+default-members = ["crates/app", "crates/helper"]
 
 [workspace.package]
 version = "0.1.0"
@@ -19,6 +19,7 @@ crownconnect-linux = { path = "../crownconnect-linux", default-features = false 
 crownos-ipc = { path = "../crownos-ipc", features = ["tokio"] }
 crownos-preview = { path = "../crownos-preview", default-features = false }
 crowntest = { path = "../crownui/crowntest" }
+impeller = { path = "../crownui/impeller", features = ["static"] }
 crownui = { path = "../crownui/crownui", features = ["static"] }
 
 anyhow = "1"
@@ -36,6 +37,7 @@ hashbrown = "0.17"
 image = { version = "0.25", default-features = false, features = ["bmp", "gif", "ico", "png", "tiff", "webp"] }
 indexmap = "2.14"
 insta = "1"
+taffy-layout = { path = "../crownui/taffy-layout" }
 libc = "0.2"
 md-5 = "0.10"
 memchr = "2.8"
