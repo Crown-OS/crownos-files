@@ -1,5 +1,7 @@
 use crownui::{
-    kit::{INTER_FAMILY, sidebar_with_header, toast_host, use_theme},
+    kit::{
+        INTER_FAMILY, sidebar_with_header, title_bar_spacer, toast_host, use_theme, window_controls,
+    },
     prelude::{Curve, Cx, Listeners, Styled, View, hstack, vstack, zstack},
 };
 
@@ -64,7 +66,8 @@ pub fn shell(cx: &mut Cx, store: Store) -> impl View + use<> {
     ))
     .flex_1()
     .min_h(0.0);
-    let inspector = vstack(details(store))
+    let title_bar = hstack((title_bar_spacer(), window_controls())).shrink(0.0);
+    let inspector = vstack((title_bar, vstack(details(store)).flex_1().min_h(0.0)))
         .w(SIDEBAR_WIDTH)
         .shrink(0.0)
         .my(LAYOUT_PADDING)

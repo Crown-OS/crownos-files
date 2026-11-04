@@ -27,8 +27,10 @@ window @0,0 1100x700
   button "Back" [disabled] @266,6 34x34
   button "Forward" [disabled] @306,6 34x34
   button "Up" @346,6 34x34
-  combo_box "Search" @388,6 320x34
-    search_field "Search" value="" @388,6 320x34
+  button [offscreen] @386,6 0x34
+  combo_box "Search" @394,6 320x34
+    search_field "Search" value="" @394,6 320x34
+  button @722,6 10x34
   group "View" value="List" @744,6 84x34
     radio_button "Icons" @747,9 39x28
       image @759,15.5 15x15
@@ -123,16 +125,20 @@ window @0,0 1100x700
     button "Documents" @322,661.6 87.6x24.8
     button "Launch" @427.6,661.6 62.4x24.8
   text "16 items, 1 selected" @662,666.2 156x15.6
-  group "Details" @834,6 260x688
-    text "FLAC" @945.15,95.75 37.7x13.05
-    text "interview.flac" @846,142 236x16.8
-    text "FLAC audio · 43 MB" @846,161.8 236x14.4
-    text "Modified" @846,201.2 236x13.2
-    text "Oct 24, 2026" @846,215.4 236x14.4
-    text "Created" @846,237.8 236x13.2
-    text "Oct 24, 2026" @846,252 236x14.4
-    text "Where" @846,274.4 236x13.2
-    text "Documents › Launch" @846,288.6 236x14.4
+  button @834,6 176x28
+  button "Maximize" @1010,6 28x28
+  button "Minimize" @1038,6 28x28
+  button "Close" @1066,6 28x28
+  group "Details" @834,34 260x660
+    text "FLAC" @945.15,123.75 37.7x13.05
+    text "interview.flac" @846,170 236x16.8
+    text "FLAC audio · 43 MB" @846,189.8 236x14.4
+    text "Modified" @846,229.2 236x13.2
+    text "Oct 24, 2026" @846,243.4 236x14.4
+    text "Created" @846,265.8 236x13.2
+    text "Oct 24, 2026" @846,280 236x14.4
+    text "Where" @846,302.4 236x13.2
+    text "Documents › Launch" @846,316.6 236x14.4
     button "Open" @846,620 56.8x28
     button "Send to Pixel 9 Pro" @846,654 183.8x28
   list [offscreen] @550,676 0x0

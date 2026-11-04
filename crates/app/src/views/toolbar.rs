@@ -1,10 +1,11 @@
-//! The header row: back, forward and up, search centered, the view switch.
+//! The header row: back, forward and up, search centered, the view switch,
+//! with the empty space between them moving the window.
 
 use crownconfig::ViewMode;
 use crownui::{
     kit::{
         ButtonOptions, ButtonShape, ButtonVariant, TextInputOptions, ToggleItem, icon_button,
-        icons, search, toggle_group,
+        icons, search, title_bar_spacer, toggle_group,
     },
     prelude::{Cx, Listeners, Runtime, Semantic, Spring, Styled, View, ViewSeq, bind, hstack},
 };
@@ -39,12 +40,17 @@ pub fn toolbar(cx: &mut Cx, store: Store) -> impl ViewSeq + use<> {
             go_forward,
         ),
         history_button(store, icons::ARROW_UP, "Up", |state| state.can_go_up, go_up),
+        title_bar_spacer(),
     ))
     .items_center()
     .gap(6.0);
-    let options = hstack((jobs_indicator(cx, store), view_switch(cx, store)))
-        .items_center()
-        .justify_end();
+    let options = hstack((
+        title_bar_spacer(),
+        jobs_indicator(cx, store),
+        view_switch(cx, store),
+    ))
+    .items_center()
+    .gap(6.0);
     (history.flex_1(), search_box(store), options.flex_1())
 }
 

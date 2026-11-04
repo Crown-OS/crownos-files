@@ -73,7 +73,7 @@ fn a_file_shows_its_type_size_place_owner_and_permissions() {
     assert!(window.shows(text("users · r--")));
     assert!(window.shows(text("---")));
     assert!(!window.shows(text("Capacity")));
-    window.app.click(role(Role::Button).name("Close")).settle();
+    window.click_dialog_button("Close");
     assert!(!window.shows(role(Role::Dialog)));
 }
 
@@ -102,7 +102,7 @@ fn a_folder_is_measured_until_the_dialog_closes() {
     );
     assert!(window.shows(text("4.8 GB")));
     assert!(!cancel.is_cancelled());
-    window.app.click(role(Role::Button).name("Close")).settle();
+    window.click_dialog_button("Close");
     assert!(cancel.is_cancelled(), "closing stops the walk");
 }
 

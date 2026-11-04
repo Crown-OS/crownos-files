@@ -35,6 +35,7 @@ use crate::{
 pub const WIDTH: f32 = 1100.0;
 pub const HEIGHT: f32 = 700.0;
 const FRAME_MILLIS: u64 = 16;
+const DIALOG_KIND: &str = "kit_dialog";
 
 /// The 16 visible entries in name order, folders first.
 pub const LISTED: [&str; 16] = [
@@ -214,6 +215,29 @@ impl Window {
                     && self.app.find(query).value.as_deref() == Some("selected")
             })
             .collect()
+    }
+
+    /// Clicks the dialog's own `label` button, which the window controls may share a name with.
+    pub fn click_dialog_button(&mut self, label: &str) -> &mut Self {
+        let center = self
+            .app
+            .ui()
+            .semantic_tree()
+            .iter()
+            .find(|node| {
+                node.role == Role::Button
+                    && node.name.as_deref() == Some(label)
+                    && node.path.contains(DIALOG_KIND)
+            })
+            .map(|node| node.bounds.center());
+        let Some(center) = center else {
+            panic!("no {label:?} button in a dialog");
+        };
+        self.app
+            .pointer_down(center.x, center.y)
+            .pointer_up(center.x, center.y)
+            .settle();
+        self
     }
 
     pub fn shows(&mut self, query: Query) -> bool {
