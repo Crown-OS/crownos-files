@@ -21,10 +21,12 @@ use crate::{
         opener::OpenCommand,
         peers::PeerCommand,
         quick_look::QuickLookCommand,
+        search::{Found, SearchRequest, finish_search},
         shell::shell,
         storage::MeasureBreakdown,
         tasks::Task,
         thumbnails::ThumbCommand,
+        virtual_folder::entry_at,
     },
     fs::engine::EngineCmd,
     state::Store,
@@ -231,10 +233,36 @@ impl Window {
             .semantic_tree()
             .iter()
             .filter(|node| node.role == Role::Text)
-            .filter_map(|node| node.name.clone())
-            .filter(|name| is_status(name))
-            .last()
+            .filter(|node| node.name.as_deref().is_some_and(is_status))
+            .max_by(|one, other| one.bounds.min_y().total_cmp(&other.bounds.min_y()))
+            .and_then(|node| node.name.clone())
             .unwrap_or_default()
+    }
+
+    /// The latest walk the search box asked the task worker for.
+    pub fn last_search(&mut self) -> Option<SearchRequest> {
+        drain(&mut self.workers.tasks)
+            .into_iter()
+            .filter_map(|task| match task {
+                Task::Search(request) => Some(request),
+                _ => None,
+            })
+            .next_back()
+    }
+
+    /// Answers `request` as the worker would: `found` (paths under the
+    /// mockup home), then the end of the walk.
+    pub fn finish_search(&mut self, request: &SearchRequest, found: &[&str]) {
+        let entries = found
+            .iter()
+            .filter_map(|relative| entry_at(&self.home.path().join(relative), None))
+            .collect();
+        let ticket = request.ticket;
+        self.answer(|cx, store| {
+            finish_search(cx, store, ticket, Found::Some(entries));
+            finish_search(cx, store, ticket, Found::End);
+        });
+        self.app.settle();
     }
 
     pub fn dir(&self, relative: &str) -> Arc<Path> {

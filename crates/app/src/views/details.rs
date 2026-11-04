@@ -1,4 +1,4 @@
-//! The right column of the content card: what is selected, previewed and described.
+//! The right sidebar: what is selected, previewed and described.
 
 use std::path::Path;
 
@@ -23,7 +23,7 @@ use crate::{
         breadcrumbs::describe_location, friendly_date::Today, human_size::HumanSize,
         kind_label::kind_label, size_label::size_label, theme::tint, thumb_store::ThumbSource,
     },
-    views::{entry_picture::entry_picture, glyph::Glyph},
+    views::{entry_picture::entry_picture, glyph::Glyph, metrics::SIDEBAR_PADDING},
 };
 
 const CROSS_FADE_MILLIS: u64 = 240;
@@ -114,7 +114,7 @@ fn panel(cx: &mut Cx, store: Store, palette: &[TagColor]) -> impl View + use<> {
         actions,
     ))
     .gap(12.0)
-    .p(16.0)
+    .p(SIDEBAR_PADDING)
     .w_full()
     .h_full()
     .min_h(0.0)

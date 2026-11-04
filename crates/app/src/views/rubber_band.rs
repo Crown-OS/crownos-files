@@ -129,7 +129,11 @@ mod tests {
     #[test]
     fn a_band_covers_the_cells_it_touches_in_every_row() {
         let width = 2.0 * GRID_PADDING + 4.0 * TILE.width + 3.0 * TILE_GAP.0;
-        let band = spanning(Point::new(20.0, 20.0), Point::new(110.0, 130.0));
+        let into_second_cell = Point::new(
+            GRID_PADDING + TILE.width + TILE_GAP.0 + 10.0,
+            GRID_PADDING + TILE.height + TILE_GAP.1 + 10.0,
+        );
+        let band = spanning(Point::new(20.0, 20.0), into_second_cell);
         assert_eq!(covered(&grid(), width, 16, band), [0, 1, 4, 5]);
         assert!(
             covered(&grid(), width, 2, band)

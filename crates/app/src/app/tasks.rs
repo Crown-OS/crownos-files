@@ -21,13 +21,14 @@ use crate::{
     app::{
         listing::{AfterChange, apply_ops, resolve_after_change},
         properties::{FileFacts, adopt_facts, adopt_folder_size, inspect, measure_folder},
+        search::{Found, SearchRequest, finish_search, run_search},
         storage::DiskSpace,
         tagging::{TagChange, adopt_tags, change_tags, read_entry_tags},
         virtual_folder::{VirtualFolder, VirtualListing, apply_listing, reload_virtual},
     },
     jobs::{JobError, Reversible, create_folder, rename},
     mime::{refine_kind, sniff},
-    model::{files_op::FilesOp, kind::FileKind, mime_id::MimeId},
+    model::{files_op::FilesOp, kind::FileKind, mime_id::MimeId, ticket::Ticket},
     state::Store,
 };
 
@@ -69,6 +70,8 @@ pub enum Task {
         path: PathBuf,
         cancel: CancellationToken,
     },
+    /// Finds what matches under a folder, streaming as it goes.
+    Search(SearchRequest),
 }
 
 #[derive(Debug)]
@@ -93,12 +96,17 @@ pub enum TaskDone {
     },
     Inspected(PathBuf, FileFacts),
     FolderMeasured(PathBuf, u64),
+    Found(Ticket, Found),
 }
 
 /// Serves `tasks` until the window closes, each one concurrently.
 pub async fn run_tasks(done: UnboundedSender<TaskDone>, mut tasks: UnboundedReceiver<Task>) {
     while let Some(task) = tasks.recv().await {
         let done = done.clone();
+        if let Task::Search(request) = task {
+            tokio::spawn(run_search(request, done));
+            continue;
+        }
         tokio::spawn(async move {
             if let Some(outcome) = perform(task).await {
                 let _ = done.send(outcome);
@@ -109,6 +117,7 @@ pub async fn run_tasks(done: UnboundedSender<TaskDone>, mut tasks: UnboundedRece
 
 async fn perform(task: Task) -> Option<TaskDone> {
     Some(match task {
+        Task::Search(_) => return None,
         Task::Rename { path, name } => {
             TaskDone::Renamed(rename(path.clone(), name).await.map(|to| (path, to)))
         }
@@ -225,6 +234,7 @@ pub fn finish_tasks(cx: &mut Cx, store: Store, burst: Vec<TaskDone>) {
                 }
             }
             TaskDone::Listed(listing) => apply_listing(cx, store, listing),
+            TaskDone::Found(ticket, found) => finish_search(cx, store, ticket, found),
             TaskDone::Sniffed { dir, kinds } => apply_kinds(cx, store, dir, &kinds),
             TaskDone::TagsRead {
                 dir,

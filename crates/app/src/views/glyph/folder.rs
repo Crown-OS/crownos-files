@@ -1,38 +1,27 @@
 use crownui::{
     ext::{DrawList, Path},
-    kit::{icon_colored, icons},
-    prelude::{CornerRadii, Point, Size, Styled, View, canvas, zstack},
+    kit::icons,
+    prelude::{CornerRadii, Point, Rect, Size},
 };
 
 use super::{
-    paint::{fill_path, rect, scaled, vertical},
-    palette::{FOLDER_BACK, FOLDER_FRONT, FOLDER_INK, FOLDER_RIM, FOLDER_SHEET},
+    paint::{fill_path, rect, vertical},
+    palette::{FOLDER_BACK, FOLDER_FRONT, FOLDER_RIM, FOLDER_SHEET},
 };
 use crate::model::special_dir::FolderGlyph;
 
-const SIZE: Size = Size::new(66.0, 54.0);
-const MARK_SIZE: f32 = 18.0;
+pub const FOLDER_SIZE: Size = Size::new(66.0, 54.0);
+pub const MARK_STROKE: f32 = 2.0;
+const MARK_SIDE: f32 = 18.0;
 const MARK_TOP: f32 = 25.0;
-const MARK_STROKE: f32 = 2.0;
-const SMALLEST_MARKED_SCALE: f32 = 0.5;
 
-/// A folder: a dark back with its tab, a white sheet and a lighter front,
-/// optionally marked with the special directory's Lucide glyph.
-pub fn folder(mark: Option<FolderGlyph>, scale: f32) -> impl View {
-    let art = canvas(move |_, _, list| scaled(list, scale, paint))
-        .w(SIZE.width * scale)
-        .h(SIZE.height * scale);
-    let mark = mark.filter(|_| scale >= SMALLEST_MARKED_SCALE).map(|mark| {
-        icon_colored(lucide(mark), MARK_STROKE, |_| FOLDER_INK)
-            .size(MARK_SIZE * scale)
-            .absolute()
-            .left((SIZE.width - MARK_SIZE) / 2.0 * scale)
-            .top(MARK_TOP * scale)
-    });
-    zstack((art, mark))
-}
+/// Where a special folder's Lucide mark sits on the front.
+pub const MARK_FRAME: Rect = Rect {
+    origin: Point::new((FOLDER_SIZE.width - MARK_SIDE) / 2.0, MARK_TOP),
+    size: Size::new(MARK_SIDE, MARK_SIDE),
+};
 
-fn lucide(mark: FolderGlyph) -> &'static str {
+pub fn lucide(mark: FolderGlyph) -> &'static str {
     match mark {
         FolderGlyph::Image => icons::IMAGE,
         FolderGlyph::Music => icons::MUSIC,
@@ -42,7 +31,8 @@ fn lucide(mark: FolderGlyph) -> &'static str {
     }
 }
 
-fn paint(list: &mut DrawList) {
+/// A folder: a dark back with its tab, a white sheet and a lighter front.
+pub fn paint_folder(list: &mut DrawList) {
     let back = Path::new()
         .move_to(Point::new(4.0, 8.5))
         .quad_to(Point::new(4.0, 4.5), Point::new(8.0, 4.5))

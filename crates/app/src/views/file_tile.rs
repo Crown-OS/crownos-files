@@ -19,13 +19,13 @@ use crate::{
         entry_picture::entry_picture,
         entry_state::{is_renaming, is_selected, selection_value},
         file_menu::open_menu,
-        metrics::THUMB_WELL,
+        metrics::{THUMB_WELL, TILE_GLYPH_SCALE},
         rename_field::rename_field,
     },
 };
 
-const NAME_SIZE: f32 = 12.0;
-const META_SIZE: f32 = 11.0;
+const NAME_SIZE: f32 = 14.0;
+const META_SIZE: f32 = 12.0;
 
 /// One cell of the icon grid: the thumbnail well, the name pill and the size.
 pub fn file_tile(cx: &mut Cx, store: Store, position: usize) -> AnyView {
@@ -35,24 +35,29 @@ pub fn file_tile(cx: &mut Cx, store: Store, position: usize) -> AnyView {
     let drop_hovered = cx.signal(false);
     let selected = move |runtime: &mut Runtime| is_selected(runtime, store, position);
 
-    let well = vstack(entry_picture(store, facts.glyph, facts.thumb.clone(), 1.0))
-        .w(THUMB_WELL.width)
-        .h(THUMB_WELL.height)
-        .items_center()
-        .justify_center()
-        .rounded(10.0)
-        .bg(bind(move |runtime: &mut Runtime| {
-            let selected = selected(runtime);
-            let hovered = hovered.get(runtime);
-            let dropping = drop_hovered.get(runtime);
-            theme.with(runtime, |theme| match (dropping, selected, hovered) {
-                (true, _, _) => drop_wash(theme),
-                (false, true, _) => selected_wash(theme),
-                (false, false, true) => hover_wash(theme),
-                (false, false, false) => TRANSPARENT,
-            })
-        }))
-        .transition(Spring::crisp());
+    let well = vstack(entry_picture(
+        store,
+        facts.glyph,
+        facts.thumb.clone(),
+        TILE_GLYPH_SCALE,
+    ))
+    .w(THUMB_WELL.width)
+    .h(THUMB_WELL.height)
+    .items_center()
+    .justify_center()
+    .rounded(10.0)
+    .bg(bind(move |runtime: &mut Runtime| {
+        let selected = selected(runtime);
+        let hovered = hovered.get(runtime);
+        let dropping = drop_hovered.get(runtime);
+        theme.with(runtime, |theme| match (dropping, selected, hovered) {
+            (true, _, _) => drop_wash(theme),
+            (false, true, _) => selected_wash(theme),
+            (false, false, true) => hover_wash(theme),
+            (false, false, false) => TRANSPARENT,
+        })
+    }))
+    .transition(Spring::crisp());
 
     let label = facts.name.clone();
     let name = move || {

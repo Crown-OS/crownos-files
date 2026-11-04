@@ -33,7 +33,6 @@ fn the_grid_shows_every_visible_entry_with_its_size() {
     assert!(window.shows(text("18 MB")));
     assert!(window.shows(text("4.8 GB")));
     assert_eq!(window.status(), "16 items");
-    assert!(window.shows(text("412 GB available")));
     assert!(window.shows(text("588 GB of 1 TB used")));
 }
 
@@ -124,6 +123,26 @@ fn ctrl_h_shows_and_hides_hidden_files() {
 }
 
 #[test]
+fn the_focused_search_widens_without_covering_the_history_buttons() {
+    let mut window = window();
+    let resting = window.app.find(role(Role::SearchField)).bounds;
+    window
+        .app
+        .focus(role(Role::SearchField))
+        .type_text("a")
+        .settle();
+    let focused = window.app.find(role(Role::SearchField)).bounds;
+    let up = window.app.find(role(Role::Button).name("Up")).bounds;
+    let view = window.app.find(role(Role::Group).name("View")).bounds;
+    assert!(focused.size.width > resting.size.width);
+    assert!(focused.min_x() >= up.max_x(), "{focused:?} overlaps {up:?}");
+    assert!(
+        focused.max_x() <= view.min_x(),
+        "{focused:?} overlaps {view:?}"
+    );
+}
+
+#[test]
 fn the_search_box_filters_the_folder_with_smart_case() {
     let mut window = window();
     window
@@ -146,9 +165,46 @@ fn the_search_box_filters_the_folder_with_smart_case() {
     assert_eq!(window.status(), "3 items");
     window.app.type_text("-P").settle();
     assert_eq!(window.status(), "0 items");
+    assert!(window.shows(text("Searching…")));
+    let Some(walk) = window.last_search() else {
+        panic!("typing asks for a walk");
+    };
+    assert_eq!(walk.query, "launch-P");
+    window.finish_search(&walk, &[]);
+    assert!(
+        window.last_search().is_none(),
+        "an ended walk starts no other"
+    );
     assert!(window.shows(text("Nothing here matches “launch-P”")));
     window.key("Escape");
     assert_eq!(window.status(), "16 items");
+}
+
+#[test]
+fn search_finds_matches_in_every_subfolder_and_escape_returns_to_the_folder() {
+    let mut window = window();
+    window
+        .app
+        .focus(role(Role::SearchField))
+        .type_text("Render")
+        .settle();
+    let Some(walk) = window.last_search() else {
+        panic!("typing asks for a walk");
+    };
+    assert_eq!(
+        walk.scope,
+        window.dir(LAUNCH),
+        "the walk looks under the open folder"
+    );
+    let nested = format!("{LAUNCH}/Renders/Render notes");
+    std::fs::create_dir_all(window.dir(&nested)).unwrap();
+    window.finish_search(&walk, &[&format!("{LAUNCH}/Renders"), &nested]);
+    assert!(window.app.exists(window.entry("Renders")));
+    assert!(window.app.exists(window.entry("Render notes")));
+    assert_eq!(window.status(), "2 items");
+    window.key("Escape");
+    assert_eq!(window.status(), "16 items");
+    assert_eq!(window.store.dir(window.app.ui().cx()), window.dir(LAUNCH));
 }
 
 #[test]
@@ -217,6 +273,16 @@ fn enter_opens_a_folder_and_backspace_returns_with_it_selected() {
     );
     assert!(!window.app.exists(window.entry("keynote.pdf")));
     window.key("Backspace");
+    assert_eq!(window.selected(), ["Renders"]);
+}
+
+#[test]
+fn the_up_button_opens_the_parent_with_the_folder_left_selected() {
+    let mut window = window();
+    window.click("Renders").key("Enter");
+    window.app.click(role(Role::Button).name("Up")).settle();
+    assert_eq!(window.store.dir(window.app.ui().cx()), window.dir(LAUNCH));
+    window.focus_files();
     assert_eq!(window.selected(), ["Renders"]);
 }
 

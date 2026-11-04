@@ -1,6 +1,7 @@
-//! Recents and Trash: folders the engine does not list, filled from the
-//! recently-used list and the trash cans. Their entries carry absolute paths
-//! as on-disk names, so `Entry::path_in` reaches the real file.
+//! Recents, Trash and Search: folders the engine does not list, filled from
+//! the recently-used list, the trash cans and a search's matches. Their
+//! entries carry absolute paths as on-disk names, so `Entry::path_in`
+//! reaches the real file.
 
 use std::{
     ffi::OsStr,
@@ -13,7 +14,7 @@ use crownui::{kit::icons, prelude::Runtime};
 use tokio::task::spawn_blocking;
 
 use crate::{
-    app::{listing::apply_ops, tasks::Task},
+    app::{listing::apply_ops, search::search_again, tasks::Task},
     fs::stat_at::stat_path,
     jobs::list_trash,
     model::{
@@ -32,11 +33,13 @@ use crate::{
 
 const RECENTS: &str = "recent:///";
 const TRASH: &str = "trash:///";
+const SEARCH: &str = "search:///";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VirtualFolder {
     Recents,
     Trash,
+    Search,
 }
 
 /// A virtual folder's listing, read off the UI thread.
@@ -52,6 +55,7 @@ impl VirtualFolder {
         match dir.as_os_str().to_str()? {
             RECENTS => Some(Self::Recents),
             TRASH => Some(Self::Trash),
+            SEARCH => Some(Self::Search),
             _ => None,
         }
     }
@@ -60,6 +64,7 @@ impl VirtualFolder {
         Path::new(match self {
             Self::Recents => RECENTS,
             Self::Trash => TRASH,
+            Self::Search => SEARCH,
         })
         .into()
     }
@@ -68,6 +73,7 @@ impl VirtualFolder {
         match self {
             Self::Recents => "Recents",
             Self::Trash => "Trash",
+            Self::Search => "Search",
         }
     }
 
@@ -75,12 +81,14 @@ impl VirtualFolder {
         match self {
             Self::Recents => icons::CLOCK,
             Self::Trash => icons::TRASH_2,
+            Self::Search => icons::SEARCH,
         }
     }
 
     pub async fn list(self) -> VirtualListing {
         let (entries, trashed) = match self {
             Self::Recents => (recent_entries().await, Vec::new()),
+            Self::Search => (Vec::new(), Vec::new()),
             Self::Trash => {
                 let trashed = list_trash().await.unwrap_or_default();
                 let listed = trashed.clone();
@@ -128,17 +136,24 @@ pub(crate) fn entry_at(path: &Path, shown_name: Option<&OsStr>) -> Option<Entry>
         entry.name = CompactString::from(name.to_string_lossy());
         entry.kind = FileKind::classify(&entry.name, entry.is_dir());
     }
+    Some(absolute_entry(entry, path))
+}
+
+/// `entry` reaching `path` from any folder.
+pub(crate) fn absolute_entry(mut entry: Entry, path: &Path) -> Entry {
     entry.extra = EntryExtra::new(
         entry.link_target().map(Path::to_path_buf),
         Some(path.as_os_str().into()),
     );
-    Some(entry)
+    entry
 }
 
 /// Lists the virtual folder being shown again, as after a job changed it.
 pub fn reload_virtual(runtime: &mut Runtime, store: Store) {
-    if let Some(folder) = VirtualFolder::of(&store.dir(runtime)) {
-        store.run(runtime, Task::ListVirtual(folder));
+    match VirtualFolder::of(&store.dir(runtime)) {
+        Some(VirtualFolder::Search) => search_again(runtime, store),
+        Some(folder) => store.run(runtime, Task::ListVirtual(folder)),
+        None => {}
     }
 }
 
@@ -190,7 +205,11 @@ mod tests {
 
     #[test]
     fn virtual_folders_round_trip_through_their_paths() {
-        for folder in [VirtualFolder::Recents, VirtualFolder::Trash] {
+        for folder in [
+            VirtualFolder::Recents,
+            VirtualFolder::Trash,
+            VirtualFolder::Search,
+        ] {
             assert_eq!(VirtualFolder::of(&folder.path()), Some(folder));
         }
         assert_eq!(VirtualFolder::of(Path::new("/home")), None);

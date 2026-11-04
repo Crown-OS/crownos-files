@@ -25,11 +25,7 @@ pub struct EntryFacts {
 
 impl EntryFacts {
     pub fn of(entry: &Entry, dir: &Path, places: &Places, today: Today) -> Self {
-        let special = entry
-            .is_dir()
-            .then(|| places.special(&entry.path_in(dir)))
-            .flatten();
-        let glyph = Glyph::for_entry(entry, special);
+        let glyph = glyph_of(entry, dir, places);
         Self {
             name: entry.name.to_string(),
             size: size_label(entry).into_owned(),
@@ -76,4 +72,13 @@ impl EntryFacts {
             })
             .unwrap_or_default()
     }
+}
+
+/// The glyph a tile draws for `entry` of `dir`, special folders marked.
+pub fn glyph_of(entry: &Entry, dir: &Path, places: &Places) -> Glyph {
+    let special = entry
+        .is_dir()
+        .then(|| places.special(&entry.path_in(dir)))
+        .flatten();
+    Glyph::for_entry(entry, special)
 }

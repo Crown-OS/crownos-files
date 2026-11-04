@@ -1,139 +1,69 @@
-//! The header row: back and forward, the path, the view switch and search.
-
-use std::{path::Path, sync::Arc};
+//! The header row: back, forward and up, search centered, the view switch.
 
 use crownconfig::ViewMode;
 use crownui::{
     kit::{
-        ButtonOptions, ButtonVariant, FieldShape, PathBarOptions, PathSegment, TextInputOptions,
-        ToggleItem, icon_button, icons, path_bar, search, text_input, toggle_group,
+        ButtonOptions, ButtonShape, ButtonVariant, TextInputOptions, ToggleItem, icon_button,
+        icons, search, toggle_group,
     },
-    prelude::{
-        Cx, Listeners, Runtime, Semantic, Spring, Styled, View, ViewSeq, bind, hstack, show,
-    },
+    prelude::{Cx, Listeners, Runtime, Semantic, Spring, Styled, View, ViewSeq, bind, hstack},
 };
 
 use crate::{
-    app::{
-        drag_drop::{drag_over_folder, drop_on_folder},
-        editing::{Editing, cancel, commit},
-        navigation::{go_back, go_forward, open_dir},
-        virtual_folder::VirtualFolder,
-    },
-    state::Store,
-    util::breadcrumbs::breadcrumbs,
-    views::{
-        focus_slot::{FocusSlotOptions, autofocused, focus_slot},
-        jobs_indicator::jobs_indicator,
-    },
+    app::navigation::{go_back, go_forward, go_up},
+    state::{NavigationState, Store},
+    views::{focus_slot::focus_slot, jobs_indicator::jobs_indicator},
 };
 
-const SEARCH_WIDTH: f32 = 136.0;
-const SEARCH_FOCUSED_WIDTH: f32 = 240.0;
+/// The search field's height, which the history buttons share.
+const FIELD_HEIGHT: f32 = 34.0;
+const SEARCH_WIDTH: f32 = 320.0;
+const SEARCH_FOCUSED_WIDTH: f32 = 440.0;
+const SEARCH_MIN_WIDTH: f32 = 160.0;
 const VIEW_MODES: [ViewMode; 2] = [ViewMode::Grid, ViewMode::List];
 
 pub fn toolbar(cx: &mut Cx, store: Store) -> impl ViewSeq + use<> {
-    (
-        icon_button(icons::CHEVRON_LEFT, "Back")
-            .variant(ButtonVariant::Ghost)
-            .disabled(bind(move |runtime: &mut Runtime| {
-                !store.navigation.get(runtime).can_go_back
-            }))
-            .on_click(move |cx, _| go_back(cx, store)),
-        icon_button(icons::CHEVRON_RIGHT, "Forward")
-            .variant(ButtonVariant::Ghost)
-            .disabled(bind(move |runtime: &mut Runtime| {
-                !store.navigation.get(runtime).can_go_forward
-            }))
-            .on_click(move |cx, _| go_forward(cx, store)),
-        location(cx, store),
-        hstack((jobs_indicator(cx, store), view_switch(cx, store)))
-            .items_center()
-            .shrink(0.0),
-        search_box(store),
-    )
-}
-
-fn segments(runtime: &mut Runtime, store: Store) -> Vec<PathSegment> {
-    let home = store.places.with(runtime, |places| places.home.clone());
-    store.cwd.with(runtime, |dir| {
-        if let Some(folder) = VirtualFolder::of(dir) {
-            return vec![PathSegment::new(folder.label()).icon(folder.icon())];
-        }
-        breadcrumbs(dir, home.as_deref())
-            .into_iter()
-            .map(|crumb| {
-                let segment = PathSegment::new(crumb.label);
-                match (crumb.is_home, crumb.label.is_empty()) {
-                    (true, _) => segment.icon(icons::HOUSE),
-                    (false, true) => segment.icon(icons::HARD_DRIVE),
-                    (false, false) => segment,
-                }
-            })
-            .collect()
-    })
-}
-
-/// The path bar, or the path typed after Ctrl+L.
-fn location(cx: &mut Cx, store: Store) -> impl View + use<> {
-    let initial = segments(cx, store);
-    let shown = cx.signal(initial);
-    cx.effect(move |runtime| {
-        let next = segments(runtime, store);
-        if shown.with_untracked(runtime, |current| *current != next) {
-            shown.set(runtime, next);
-        }
-    });
-    let crumbs = move || {
-        path_bar(shown, move |cx, index| {
-            if let Some(dir) = crumb_path(cx, store, index) {
-                open_dir(cx, store, dir);
-            }
-        })
-        .on_segment_drag_over(move |cx, index, event| {
-            if let Some(dir) = crumb_path(cx, store, index) {
-                drag_over_folder(cx, store, &dir, false, event);
-            }
-        })
-        .on_segment_drop(move |cx, index, event| {
-            if let Some(dir) = crumb_path(cx, store, index) {
-                drop_on_folder(cx, store, &dir, event);
-            }
-        })
-    };
-    let editor = move || {
-        autofocused(
-            text_input(store.edit_text)
-                .shape(FieldShape::Pill)
-                .stretch()
-                .label("Location")
-                .on_submit(move |cx, _| commit(cx, store)),
-        )
-        .on_focus_out(move |cx| cancel(cx, store))
-        .flex_1()
-    };
-    show(
-        bind(move |runtime: &mut Runtime| store.editing.get(runtime) == Editing::Path),
-        editor,
-        crumbs,
-    )
-    .flex_row()
+    let history = hstack((
+        history_button(
+            store,
+            icons::ARROW_LEFT,
+            "Back",
+            |state| state.can_go_back,
+            go_back,
+        ),
+        history_button(
+            store,
+            icons::ARROW_RIGHT,
+            "Forward",
+            |state| state.can_go_forward,
+            go_forward,
+        ),
+        history_button(store, icons::ARROW_UP, "Up", |state| state.can_go_up, go_up),
+    ))
     .items_center()
-    .flex_1()
-    .min_w(0.0)
+    .gap(6.0);
+    let options = hstack((jobs_indicator(cx, store), view_switch(cx, store)))
+        .items_center()
+        .justify_end();
+    (history.flex_1(), search_box(store), options.flex_1())
 }
 
-/// The folder the path bar's segment `index` stands for.
-fn crumb_path(runtime: &mut Runtime, store: Store, index: usize) -> Option<Arc<Path>> {
-    let home = store.places.with(runtime, |places| places.home.clone());
-    store.cwd.with(runtime, |dir| {
-        if VirtualFolder::of(dir).is_some() {
-            return None;
-        }
-        breadcrumbs(dir, home.as_deref())
-            .get(index)
-            .map(|crumb| crumb.path.into())
-    })
+/// A round history button, enabled while `leads_somewhere` holds for the navigation state.
+fn history_button(
+    store: Store,
+    glyph: &'static str,
+    label: &'static str,
+    leads_somewhere: fn(NavigationState) -> bool,
+    navigate: fn(&mut Runtime, Store),
+) -> impl View {
+    icon_button(glyph, label)
+        .variant(ButtonVariant::Secondary)
+        .shape(ButtonShape::Pill)
+        .size(FIELD_HEIGHT)
+        .disabled(bind(move |runtime: &mut Runtime| {
+            !leads_somewhere(store.navigation.get(runtime))
+        }))
+        .on_click(move |cx, _| navigate(cx, store))
 }
 
 /// The icons/list switch, kept in step with the store's view mode.
@@ -171,7 +101,7 @@ fn view_switch(cx: &mut Cx, store: Store) -> impl View + use<> {
     .label("View")
 }
 
-/// Search: an instant filter of this folder, wider while in use.
+/// Search: an instant filter of this folder, wider while in use, narrower when the header is.
 fn search_box(store: Store) -> impl View {
     focus_slot(
         search(store.query).placeholder("Search").stretch(),
@@ -186,6 +116,6 @@ fn search_box(store: Store) -> impl View {
             SEARCH_WIDTH
         }
     }))
-    .shrink(0.0)
+    .min_w(SEARCH_MIN_WIDTH)
     .transition(Spring::snappy())
 }

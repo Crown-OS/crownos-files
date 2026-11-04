@@ -5,7 +5,10 @@ use crownconfig::{Files, SectionWatch, SortKey as ConfigSortKey, save_files, wat
 use crownui::prelude::Cx;
 
 use crate::{
-    app::listing::reorder,
+    app::{
+        listing::reorder,
+        pinning::{pinned_in, same_pins},
+    },
     model::sort::{SortKey, SortOrder},
     state::Store,
 };
@@ -31,10 +34,16 @@ pub fn sync_config(cx: &mut Cx, store: Store, files: Files) {
     cx.effect(move |runtime| {
         let view_mode = store.view_mode.get(runtime);
         let show_hidden = store.show_hidden.get(runtime);
+        let pinned = store.pinned.get(runtime);
         let edited = known.update(runtime, |known| {
-            let changed = known.view_mode != view_mode || known.show_hidden != show_hidden;
+            let repinned = !same_pins(&known.pinned, &pinned);
+            let changed =
+                repinned || known.view_mode != view_mode || known.show_hidden != show_hidden;
             known.view_mode = view_mode;
             known.show_hidden = show_hidden;
+            if repinned {
+                known.pinned = pinned.iter().map(|dir| dir.to_path_buf()).collect();
+            }
             changed.then(|| known.clone())
         });
         if let Some(files) = edited
@@ -74,6 +83,12 @@ fn apply(cx: &mut Cx, store: Store, files: &Files) {
     }
     if store.tags.with(cx, |tags| *tags != files.tags) {
         store.tags.set(cx, files.tags.clone());
+    }
+    if store
+        .pinned
+        .with(cx, |pinned| !same_pins(&files.pinned, pinned))
+    {
+        store.pinned.set(cx, pinned_in(files));
     }
     store.drives.configure(cx, files);
     let sort = sort_order(files);

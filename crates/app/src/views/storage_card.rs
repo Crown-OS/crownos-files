@@ -1,5 +1,8 @@
 use crownui::{
-    kit::{Segment, SegmentedBarOptions, card, icon_muted, icons, segmented_bar, use_theme},
+    kit::{
+        Segment, SegmentedBarOptions, WindowRadius, card, icon_muted, icons, segmented_bar,
+        use_theme,
+    },
     prelude::{Cx, Runtime, Styled, View, bind, hstack, show, spacer, text, vstack},
 };
 
@@ -7,13 +10,22 @@ use crate::{
     app::storage::{DiskSpace, Share, shares},
     state::Store,
     util::{human_size::HumanSize, theme::tint},
+    views::metrics::{LAYOUT_PADDING, SIDEBAR_PADDING},
 };
 
 const BAR_HEIGHT: f32 = 6.0;
+const FALLBACK_RADIUS: f32 = 10.0;
 
-/// The sidebar's card of how full the current folder's disk is.
+/// The sidebar's card of how full the current folder's disk is, inset from
+/// the window like the content card and rounded concentrically with it.
 pub fn storage_card(cx: &mut Cx, store: Store) -> impl View + use<> {
     let theme = use_theme(cx);
+    let window = cx.environment::<WindowRadius>();
+    let radius = move |runtime: &mut Runtime| {
+        window.map_or(FALLBACK_RADIUS, |window| {
+            window.with(runtime, |window| window.concentric(LAYOUT_PADDING))
+        })
+    };
     let space = move |runtime: &mut Runtime| store.storage.space.get(runtime);
     let body = move || {
         let percent = move |runtime: &mut Runtime| {
@@ -83,6 +95,7 @@ pub fn storage_card(cx: &mut Cx, store: Store) -> impl View + use<> {
             .w_full(),
         )
         .w_full()
+        .rounded(bind(radius))
     };
     show(
         bind(move |runtime: &mut Runtime| space(runtime).is_some()),
@@ -90,4 +103,7 @@ pub fn storage_card(cx: &mut Cx, store: Store) -> impl View + use<> {
         || vstack(()),
     )
     .flex_col()
+    .ml(-SIDEBAR_PADDING)
+    .mr(LAYOUT_PADDING - SIDEBAR_PADDING)
+    .mb(-SIDEBAR_PADDING)
 }

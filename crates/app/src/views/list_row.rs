@@ -19,17 +19,16 @@ use crate::{
         entry_picture::entry_picture,
         entry_state::{is_renaming, is_selected, selection_value},
         file_menu::open_menu,
-        metrics::{LIST_ICON, ROW_HEIGHT},
+        metrics::{LIST_GLYPH_SCALE, LIST_ICON, ROW_HEIGHT},
         rename_field::rename_field,
     },
 };
 
-const GLYPH_SCALE: f32 = 0.32;
-const KIND_WIDTH: f32 = 96.0;
-const DATE_WIDTH: f32 = 96.0;
-const SIZE_WIDTH: f32 = 60.0;
-const NAME_SIZE: f32 = 12.0;
-const DETAIL_SIZE: f32 = 11.0;
+const KIND_WIDTH: f32 = 110.0;
+const DATE_WIDTH: f32 = 110.0;
+const SIZE_WIDTH: f32 = 68.0;
+const NAME_SIZE: f32 = 14.0;
+const DETAIL_SIZE: f32 = 13.0;
 
 /// One row of the list view: glyph, name, kind, date and size.
 pub fn list_row(cx: &mut Cx, store: Store, position: usize) -> AnyView {
@@ -62,7 +61,7 @@ pub fn list_row(cx: &mut Cx, store: Store, position: usize) -> AnyView {
         store,
         facts.glyph,
         facts.thumb.clone(),
-        GLYPH_SCALE,
+        LIST_GLYPH_SCALE,
     ))
     .w(LIST_ICON)
     .h(LIST_ICON)
@@ -98,10 +97,10 @@ pub fn list_row(cx: &mut Cx, store: Store, position: usize) -> AnyView {
         detail(facts.size, SIZE_WIDTH).text_right(),
     ))
     .items_center()
-    .gap(10.0)
-    .px(8.0)
+    .gap(12.0)
+    .px(14.0)
     .h(ROW_HEIGHT)
-    .rounded(8.0)
+    .rounded(ROW_HEIGHT / 2.0)
     .font_family(INTER_FAMILY)
     .bg(bind(move |runtime: &mut Runtime| {
         let selected = selected(runtime);

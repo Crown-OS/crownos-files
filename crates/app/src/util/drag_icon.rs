@@ -1,16 +1,21 @@
-//! The picture that follows the pointer while files are dragged: a rounded
-//! card of the first file's thumbnail (or its kind color) and, for several
-//! files, an accent badge with the count.
+//! The picture that follows the pointer while files are dragged: the first
+//! file as its grid tile draws it (its thumbnail, or its glyph rendered on
+//! the GPU) and, for several files, an accent badge with the count.
 
-use crownui::prelude::{Color, DragIcon, Point};
+use crownui::prelude::{Color, DragIcon, Point, Size};
 
 const RGBA: usize = 4;
-const ICON: f32 = 64.0;
-const CARD_ORIGIN: (f32, f32) = (4.0, 12.0);
-const CARD: f32 = 48.0;
+pub const ICON: f32 = 96.0;
+/// Where the art sits in the icon: the glyph is centered in this box.
+pub const ART_ORIGIN: (f32, f32) = (4.0, 16.0);
+pub const ART_SIZE: Size = Size::new(80.0, 76.0);
+/// A thumbnail at the grid's photo size and corner radius.
+const THUMB_SIZE: Size = Size::new(80.0, 52.0);
+const THUMB_RADIUS: f32 = 6.0;
+const CARD_SIDE: f32 = 56.0;
 const CARD_RADIUS: f32 = 9.0;
-const CARD_OPACITY: f32 = 0.92;
-const BADGE_CENTER: (f32, f32) = (51.0, 13.0);
+const ART_OPACITY: f32 = 0.92;
+const BADGE_CENTER: (f32, f32) = (83.0, 14.0);
 const BADGE_RADIUS: f32 = 11.0;
 const GLYPH_COLUMNS: usize = 3;
 const GLYPH_ROWS: usize = 5;
@@ -65,14 +70,18 @@ impl Swatch {
         self.rgba.len()
     }
 
-    /// The pixel under `(x, y)` of a `side` square this swatch covers, centred.
-    fn covering(&self, x: f32, y: f32, side: f32) -> [u8; 4] {
-        let scale = (side / self.width as f32).max(side / self.height as f32);
-        let source = |at: f32, extent: u32| {
+    /// The pixel under `(x, y)` of a `frame` this swatch covers, centred.
+    fn covering(&self, x: f32, y: f32, frame: Size) -> [u8; 4] {
+        let scale = (frame.width / self.width as f32).max(frame.height / self.height as f32);
+        let source = |at: f32, extent: u32, side: f32| {
             let offset = (side - extent as f32 * scale) / 2.0;
-            (((at - offset) / scale) as u32).min(extent - 1)
+            (((at - offset).max(0.0) / scale) as u32).min(extent - 1)
         };
-        let start = (source(y, self.height) * self.width + source(x, self.width)) as usize * RGBA;
+        let (row, column) = (
+            source(y, self.height, frame.height),
+            source(x, self.width, frame.width),
+        );
+        let start = (row * self.width + column) as usize * RGBA;
         let mut pixel = [0; RGBA];
         pixel.copy_from_slice(&self.rgba[start..start + RGBA]);
         pixel
@@ -87,24 +96,44 @@ pub struct DragIconColors {
     pub badge_text: Color,
 }
 
-pub fn drag_icon(
-    swatch: Option<&Swatch>,
-    count: usize,
-    colors: DragIconColors,
-    scale: f32,
-) -> DragIcon {
+/// What stands for the dragged files.
+pub enum DragArt<'a> {
+    /// The first file's thumbnail.
+    Thumbnail(&'a Swatch),
+    /// The first file's glyph, already painted on the icon's square.
+    Rendered(Vec<u8>),
+    /// A card in the file's kind color, when the glyph could not be rendered.
+    Card,
+}
+
+pub fn drag_icon(art: DragArt, count: usize, colors: DragIconColors, scale: f32) -> DragIcon {
     let side = (ICON * scale).round().max(1.0) as u32;
-    let mut canvas = Canvas {
-        side,
-        rgba: vec![0; side as usize * side as usize * RGBA],
+    let length = side as usize * side as usize * RGBA;
+    let mut canvas = match art {
+        DragArt::Rendered(mut rgba) if rgba.len() == length => {
+            rgba.chunks_exact_mut(RGBA)
+                .for_each(|pixel| pixel[3] = (f32::from(pixel[3]) * ART_OPACITY) as u8);
+            Canvas { side, rgba }
+        }
+        DragArt::Thumbnail(swatch) => {
+            let mut canvas = Canvas::blank(side);
+            paint_centered(
+                &mut canvas,
+                THUMB_SIZE,
+                THUMB_RADIUS,
+                scale,
+                |x, y, frame| swatch.covering(x, y, frame),
+            );
+            canvas
+        }
+        DragArt::Rendered(_) | DragArt::Card => {
+            let mut canvas = Canvas::blank(side);
+            let fill = colors.card.to_rgba8();
+            let card = Size::new(CARD_SIDE, CARD_SIDE);
+            paint_centered(&mut canvas, card, CARD_RADIUS, scale, |_, _, _| fill);
+            canvas
+        }
     };
-    let card_fill = colors.card.to_rgba8();
-    let (left, top, card) = (CARD_ORIGIN.0 * scale, CARD_ORIGIN.1 * scale, CARD * scale);
-    canvas.paint(|x, y| {
-        let coverage = rounded_square(x - left, y - top, card, CARD_RADIUS * scale);
-        let fill = swatch.map_or(card_fill, |swatch| swatch.covering(x - left, y - top, card));
-        (coverage * CARD_OPACITY > 0.0).then_some((fill, coverage * CARD_OPACITY))
-    });
     if count > 1 {
         paint_badge(&mut canvas, count, colors, scale);
     }
@@ -114,8 +143,30 @@ pub fn drag_icon(
         rgba: canvas.rgba,
         logical_width: ICON as u32,
         logical_height: ICON as u32,
-        hotspot: Point::new(CARD_ORIGIN.0 + CARD / 2.0, CARD_ORIGIN.1 + CARD / 2.0),
+        hotspot: Point::new(
+            ART_ORIGIN.0 + ART_SIZE.width / 2.0,
+            ART_ORIGIN.1 + ART_SIZE.height / 2.0,
+        ),
     }
+}
+
+/// A rounded `size` box centered in the art area, each pixel from `fill`
+/// given its position inside the box and the box's device size.
+fn paint_centered(
+    canvas: &mut Canvas,
+    size: Size,
+    radius: f32,
+    scale: f32,
+    fill: impl Fn(f32, f32, Size) -> [u8; 4],
+) {
+    let frame = Size::new(size.width * scale, size.height * scale);
+    let left = (ART_ORIGIN.0 + (ART_SIZE.width - size.width) / 2.0) * scale;
+    let top = (ART_ORIGIN.1 + (ART_SIZE.height - size.height) / 2.0) * scale;
+    canvas.paint(|x, y| {
+        let (x, y) = (x - left, y - top);
+        let coverage = rounded_rect(x, y, frame, radius * scale) * ART_OPACITY;
+        (coverage > 0.0).then(|| (fill(x, y, frame), coverage))
+    });
 }
 
 fn paint_badge(canvas: &mut Canvas, count: usize, colors: DragIconColors, scale: f32) {
@@ -167,12 +218,12 @@ fn count_glyphs(count: usize) -> Vec<usize> {
     glyphs
 }
 
-/// How much of the pixel at `(x, y)` a `side` square with `radius` corners covers.
-fn rounded_square(x: f32, y: f32, side: f32, radius: f32) -> f32 {
-    let half = side / 2.0;
+/// How much of the pixel at `(x, y)` a `frame` box with `radius` corners covers.
+fn rounded_rect(x: f32, y: f32, frame: Size, radius: f32) -> f32 {
+    let (half_width, half_height) = (frame.width / 2.0, frame.height / 2.0);
     let (dx, dy) = (
-        ((x + 0.5 - half).abs() - half + radius).max(0.0),
-        ((y + 0.5 - half).abs() - half + radius).max(0.0),
+        ((x + 0.5 - half_width).abs() - half_width + radius).max(0.0),
+        ((y + 0.5 - half_height).abs() - half_height + radius).max(0.0),
     );
     let outside = dx.hypot(dy) - radius;
     (0.5 - outside).clamp(0.0, 1.0)
@@ -184,6 +235,13 @@ struct Canvas {
 }
 
 impl Canvas {
+    fn blank(side: u32) -> Self {
+        Self {
+            side,
+            rgba: vec![0; side as usize * side as usize * RGBA],
+        }
+    }
+
     /// Blends what `shade` returns for each pixel over the canvas.
     fn paint(&mut self, mut shade: impl FnMut(f32, f32) -> Option<([u8; 4], f32)>) {
         let side = self.side as usize;
@@ -230,17 +288,17 @@ mod tests {
 
     #[test]
     fn one_file_is_a_card_without_a_badge() {
-        let icon = drag_icon(None, 1, COLORS, 1.0);
-        assert_eq!((icon.width, icon.height), (64, 64));
-        assert_eq!(pixel(&icon, 28.0, 36.0)[..3], [0x3b, 0x82, 0xf6]);
+        let icon = drag_icon(DragArt::Card, 1, COLORS, 1.0);
+        assert_eq!((icon.width, icon.height), (96, 96));
+        assert_eq!(pixel(&icon, 44.0, 54.0)[..3], [0x3b, 0x82, 0xf6]);
         assert_eq!(pixel(&icon, 0.0, 0.0)[3], 0, "outside the card is clear");
         assert_eq!(pixel(&icon, BADGE_CENTER.0, BADGE_CENTER.1 - 8.0)[3], 0);
     }
 
     #[test]
     fn several_files_get_a_counted_badge_at_the_display_scale() {
-        let icon = drag_icon(None, 3, COLORS, 2.0);
-        assert_eq!((icon.width, icon.logical_width), (128, 64));
+        let icon = drag_icon(DragArt::Card, 3, COLORS, 2.0);
+        assert_eq!((icon.width, icon.logical_width), (192, 96));
         let edge = pixel(&icon, BADGE_CENTER.0 * 2.0, (BADGE_CENTER.1 - 9.0) * 2.0);
         assert_eq!(edge[..3], [0x8f, 0x6d, 0xfb]);
         let inked = icon
@@ -266,7 +324,19 @@ mod tests {
         let swatch = Swatch::shrink(2, 2, &rgba, 1).unwrap();
         assert_eq!((swatch.width, swatch.height, swatch.bytes()), (1, 1, 4));
         let full = Swatch::shrink(2, 2, &rgba, 40).unwrap();
-        assert_eq!(full.covering(0.0, 0.0, 10.0), white);
-        assert_eq!(full.covering(9.0, 0.0, 10.0), black);
+        let square = Size::new(10.0, 10.0);
+        assert_eq!(full.covering(0.0, 0.0, square), white);
+        assert_eq!(full.covering(9.0, 0.0, square), black);
+    }
+
+    #[test]
+    fn a_rendered_glyph_is_kept_and_a_mismatched_one_falls_back_to_the_card() {
+        let side = ICON as usize;
+        let rendered = vec![255; side * side * RGBA];
+        let icon = drag_icon(DragArt::Rendered(rendered), 1, COLORS, 1.0);
+        assert_eq!(pixel(&icon, 0.0, 0.0)[..3], [255, 255, 255]);
+        let icon = drag_icon(DragArt::Rendered(vec![255; 4]), 1, COLORS, 1.0);
+        assert_eq!(pixel(&icon, 0.0, 0.0)[3], 0);
+        assert_eq!(pixel(&icon, 44.0, 54.0)[..3], [0x3b, 0x82, 0xf6]);
     }
 }

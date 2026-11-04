@@ -5,17 +5,31 @@ use crownui::{
 
 use crate::{
     app::{
-        conflicts::follow_dismissal, keys::handle_key, listing::reorder,
-        properties::follow_properties_dismissal, quick_look::follow_selection,
-        tagging::follow_visible_tags, thumbnails::follow_visible, unlock::follow_unlock_dismissal,
+        conflicts::follow_dismissal,
+        keys::handle_key,
+        listing::reorder,
+        pinning::{drag_entered_window, drag_left_window},
+        properties::follow_properties_dismissal,
+        quick_look::follow_selection,
+        search::follow_query,
+        tagging::follow_visible_tags,
+        thumbnails::follow_visible,
+        unlock::follow_unlock_dismissal,
     },
     state::Store,
     util::theme::{tint, with_translucency_factor},
     views::{
-        conflict_dialog::conflict_dialog, delete_dialog::delete_dialog, details::details,
-        file_area::file_area, file_menu::file_menu, metrics::DETAILS_WIDTH,
-        open_with_dialog::open_with_dialog, passphrase_dialog::passphrase_dialog,
-        properties_dialog::properties_dialog, sidebar::sidebar, status_bar::status_bar,
+        conflict_dialog::conflict_dialog,
+        delete_dialog::delete_dialog,
+        details::details,
+        file_area::file_area,
+        file_menu::file_menu,
+        metrics::{LAYOUT_PADDING, SIDEBAR_WIDTH},
+        open_with_dialog::open_with_dialog,
+        passphrase_dialog::passphrase_dialog,
+        properties_dialog::properties_dialog,
+        sidebar::sidebar,
+        status_bar::status_bar,
         toolbar::toolbar,
     },
 };
@@ -36,22 +50,26 @@ pub fn shell(cx: &mut Cx, store: Store) -> impl View + use<> {
     follow_visible_tags(cx, store);
     follow_unlock_dismissal(cx, store);
     follow_properties_dismissal(cx, store);
+    follow_query(cx, store);
     let theme = use_theme(cx);
     let hairline = move || {
         vstack(())
             .shrink(0.0)
             .bg(tint(theme, |theme| theme.surface.hairline))
     };
-    let files = hstack((
+    let content = vstack((
         file_area(cx, store),
-        hairline().w(1.0),
-        vstack(details(store)).w(DETAILS_WIDTH).shrink(0.0),
+        hairline().h(1.0),
+        status_bar(cx, store),
     ))
     .flex_1()
     .min_h(0.0);
-    let content = vstack((files, hairline().h(1.0), status_bar(cx, store)))
-        .flex_1()
-        .min_h(0.0);
+    let inspector = vstack(details(store))
+        .w(SIDEBAR_WIDTH)
+        .shrink(0.0)
+        .my(LAYOUT_PADDING)
+        .mr(LAYOUT_PADDING)
+        .bg(tint(theme, |theme| theme.sidebar.bg));
     let backdrop = vstack(())
         .w_full()
         .h_full()
@@ -59,7 +77,10 @@ pub fn shell(cx: &mut Cx, store: Store) -> impl View + use<> {
             with_translucency_factor(theme.surface.bg, CHROME_TRANSLUCENCY)
         }))
         .transition(Curve::ease_in_out(THEME_FADE_MILLIS));
-    let window = sidebar_with_header(sidebar(cx, store), toolbar(cx, store), content);
+    let layout = sidebar_with_header(sidebar(cx, store), toolbar(cx, store), content)
+        .flex_1()
+        .min_w(0.0);
+    let window = hstack((layout, inspector)).w_full().h_full();
     zstack((
         backdrop,
         toast_host(window).w_full().h_full(),
@@ -72,4 +93,6 @@ pub fn shell(cx: &mut Cx, store: Store) -> impl View + use<> {
     ))
     .font_family(INTER_FAMILY)
     .on_key_down(move |cx, event| handle_key(cx, store, event))
+    .on_drag_over(move |cx, event| drag_entered_window(cx, store, event))
+    .on_drag_leave(move |cx, _| drag_left_window(cx, store))
 }

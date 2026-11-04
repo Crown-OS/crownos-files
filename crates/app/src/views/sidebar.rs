@@ -1,4 +1,5 @@
-//! The sidebar: brand, favorite places, devices and the storage card.
+//! The sidebar: brand, favorite places, pinned folders, devices and the
+//! storage card.
 
 use std::{path::Path, sync::Arc};
 
@@ -14,6 +15,7 @@ use crate::{
     views::{
         devices_section::devices_section,
         drop_target::{folder_drop_target, trash_drop_target},
+        pinned_section::pinned_section,
         storage_card::storage_card,
     },
 };
@@ -22,6 +24,7 @@ pub fn sidebar(cx: &mut Cx, store: Store) -> impl ViewSeq + use<> {
     (
         sidebar_brand("Files", icons::FOLDER),
         favorites(cx, store),
+        pinned_section(cx, store),
         devices_section(store),
         spacer(),
         storage_card(cx, store),
@@ -79,7 +82,7 @@ fn place(
     .on_click(move |cx, _| open_dir(cx, store, opened.clone()));
     match VirtualFolder::of(&dir) {
         Some(VirtualFolder::Trash) => trash_drop_target(item, store).boxed(),
-        Some(VirtualFolder::Recents) => item.boxed(),
+        Some(VirtualFolder::Recents | VirtualFolder::Search) => item.boxed(),
         None => folder_drop_target(item, store, dir, cx.signal(false)).boxed(),
     }
 }

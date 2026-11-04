@@ -1,7 +1,7 @@
 //! Moving between folders: the backstack, the history cache and the engine
 //! commands each move owes.
 
-use std::{mem, path::Path, sync::Arc};
+use std::{ffi::OsStr, mem, path::Path, sync::Arc};
 
 use crownui::prelude::{Runtime, Vector};
 
@@ -20,6 +20,19 @@ use crate::{
     state::{NavigationState, Store},
 };
 
+/// Whether moving to a folder empties the search box.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QueryOnEnter {
+    Clear,
+    Keep,
+}
+
+/// Shows `dir` in place of the current folder without a history step, as
+/// search does while it runs.
+pub fn show_dir(runtime: &mut Runtime, store: Store, dir: Arc<Path>, query: QueryOnEnter) {
+    enter(runtime, store, dir, query);
+}
+
 /// Opens `dir`, as a click on a folder or a sidebar place does.
 pub fn open_dir(runtime: &mut Runtime, store: Store, dir: Arc<Path>) {
     if store.dir(runtime) == dir {
@@ -28,7 +41,7 @@ pub fn open_dir(runtime: &mut Runtime, store: Store, dir: Arc<Path>) {
     store
         .backstack
         .update(runtime, |backstack| backstack.push(dir.clone()));
-    enter(runtime, store, dir);
+    enter(runtime, store, dir, QueryOnEnter::Clear);
 }
 
 pub fn go_back(runtime: &mut Runtime, store: Store) {
@@ -36,7 +49,7 @@ pub fn go_back(runtime: &mut Runtime, store: Store) {
         .backstack
         .update(runtime, |backstack| backstack.back().cloned())
     {
-        enter(runtime, store, dir);
+        enter(runtime, store, dir, QueryOnEnter::Clear);
     }
 }
 
@@ -45,17 +58,26 @@ pub fn go_forward(runtime: &mut Runtime, store: Store) {
         .backstack
         .update(runtime, |backstack| backstack.forward().cloned())
     {
-        enter(runtime, store, dir);
+        enter(runtime, store, dir, QueryOnEnter::Clear);
     }
+}
+
+/// The folder holding `dir` and `dir`'s name in it; virtual folders and the root have none.
+fn parent_of(dir: &Path) -> Option<(&Path, &OsStr)> {
+    if VirtualFolder::of(dir).is_some() {
+        return None;
+    }
+    Some((dir.parent()?, dir.file_name()?))
+}
+
+pub fn has_parent(dir: &Path) -> bool {
+    parent_of(dir).is_some()
 }
 
 /// Opens the parent folder with the folder just left selected.
 pub fn go_up(runtime: &mut Runtime, store: Store) {
     let dir = store.dir(runtime);
-    if VirtualFolder::of(&dir).is_some() {
-        return;
-    }
-    let (Some(parent), Some(name)) = (dir.parent(), dir.file_name()) else {
+    let Some((parent, name)) = parent_of(&dir) else {
         return;
     };
     let name = name.to_string_lossy().into();
@@ -82,7 +104,9 @@ fn request_listing(
 ) {
     if let Some(folder) = VirtualFolder::of(&dir) {
         store.send(runtime, EngineCmd::Watch(Vec::new()));
-        store.run(runtime, Task::ListVirtual(folder));
+        if folder != VirtualFolder::Search {
+            store.run(runtime, Task::ListVirtual(folder));
+        }
         return;
     }
     store.send(
@@ -100,8 +124,8 @@ fn request_listing(
     store.run(runtime, Task::MeasureDisk { dir, home });
 }
 
-fn enter(runtime: &mut Runtime, store: Store, dir: Arc<Path>) {
-    if store.query.with(runtime, |query| !query.is_empty()) {
+fn enter(runtime: &mut Runtime, store: Store, dir: Arc<Path>, query: QueryOnEnter) {
+    if query == QueryOnEnter::Clear && store.query.with(runtime, |query| !query.is_empty()) {
         store.query.set(runtime, String::new());
     }
     if store.editing.get(runtime) != Editing::Nothing {
@@ -133,10 +157,12 @@ fn enter(runtime: &mut Runtime, store: Store, dir: Arc<Path>) {
         .update(runtime, |history| history.store(previous));
 
     request_listing(runtime, store, dir.clone(), revisit);
+    let can_go_up = has_parent(&dir);
     store.cwd.set(runtime, dir);
     let state = store.backstack.with(runtime, |backstack| NavigationState {
         can_go_back: backstack.can_go_back(),
         can_go_forward: backstack.can_go_forward(),
+        can_go_up,
     });
     store.navigation.set(runtime, state);
     store

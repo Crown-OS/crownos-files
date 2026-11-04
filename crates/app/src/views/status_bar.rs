@@ -1,18 +1,15 @@
 use crownui::{
-    kit::{progress, use_theme},
-    prelude::{Cx, Runtime, Styled, View, bind, hstack, show, spacer, text},
+    kit::use_theme,
+    prelude::{Cx, Runtime, Styled, View, bind, hstack, text},
 };
 
 use crate::{
     state::Store,
-    util::{human_size::HumanSize, theme::tint},
-    views::metrics::STATUS_HEIGHT,
+    util::theme::tint,
+    views::{location_bar::location_bar, metrics::STATUS_HEIGHT},
 };
 
-const METER_WIDTH: f32 = 72.0;
-const METER_HEIGHT: f32 = 6.0;
-
-/// "16 items, 1 selected" on the left, the free space of this disk on the right.
+/// The path of the open folder on the left, "16 items, 1 selected" on the right.
 pub fn status_bar(cx: &mut Cx, store: Store) -> impl View + use<> {
     let theme = use_theme(cx);
     let summary = move |runtime: &mut Runtime| {
@@ -27,39 +24,16 @@ pub fn status_bar(cx: &mut Cx, store: Store) -> impl View + use<> {
             selected => format!("{count} {items}, {selected} selected"),
         }
     };
-    let free = move || {
-        hstack((
-            progress(bind(move |runtime: &mut Runtime| {
-                store.storage.space.with(runtime, |space| {
-                    space.map_or(0.0, |space| space.usage.used_fraction())
-                })
-            }))
-            .w(METER_WIDTH)
-            .h(METER_HEIGHT),
-            text(bind(move |runtime: &mut Runtime| {
-                store.storage.space.with(runtime, |space| {
-                    space.map_or_else(String::new, |space| {
-                        format!("{} available", HumanSize(space.usage.available))
-                    })
-                })
-            })),
-        ))
-        .items_center()
-        .gap(8.0)
-    };
     hstack((
-        text(bind(summary)),
-        spacer(),
-        show(
-            bind(move |runtime: &mut Runtime| store.storage.space.with(runtime, Option::is_some)),
-            free,
-            || hstack(()),
-        ),
+        location_bar(cx, store),
+        text(bind(summary))
+            .shrink(0.0)
+            .text_size(13.0)
+            .text_color(tint(theme, |theme| theme.text.muted)),
     ))
     .items_center()
+    .gap(12.0)
     .h(STATUS_HEIGHT)
     .shrink(0.0)
-    .px(16.0)
-    .text_size(12.0)
-    .text_color(tint(theme, |theme| theme.text.muted))
+    .px(10.0)
 }

@@ -22,10 +22,12 @@ pub mod opening;
 #[cfg(feature = "connect")]
 pub mod peer_worker;
 pub mod peers;
+pub mod pinning;
 pub mod privilege;
 pub mod properties;
 pub mod quick_look;
 pub mod root;
+pub mod search;
 pub mod selection;
 pub mod shell;
 pub mod spring_load;

@@ -112,7 +112,11 @@ fn dragging_entries_out_offers_them_and_moves_them_within_the_disk() {
         "{keynote:?}"
     );
     let icon = source.icon.expect("the drag has an icon");
-    assert_eq!((icon.logical_width, icon.logical_height), (64, 64));
+    assert_eq!((icon.logical_width, icon.logical_height), (96, 96));
+    assert!(
+        icon.rgba.chunks_exact(4).any(|pixel| pixel[3] > 0),
+        "the icon shows the file's glyph"
+    );
     assert_eq!(source.actions, DndActions::COPY_MOVE);
     assert_eq!(window.selected(), ["keynote.pdf"]);
 
@@ -165,4 +169,38 @@ fn the_trash_place_takes_files_to_the_trash() {
         window.job_commands().as_slice(),
         [JobCommand::Submit { job: Job::Trash(paths), .. }] if *paths == [keynote]
     ));
+}
+
+#[test]
+fn a_folder_dropped_on_the_sidebar_pin_zone_is_pinned_and_can_be_unpinned() {
+    let mut window = window();
+    let pin_zone = crowntest::name("Pin folder");
+    let brand = window.entry("Brand");
+    let (x, y) = center(&mut window, brand);
+    window
+        .app
+        .drag_enter(x, y, &[URI_LIST_MIME], DndActions::COPY_MOVE);
+    window.app.advance_ms(600);
+    let (zone_x, zone_y) = center(&mut window, pin_zone.clone());
+    window.app.drag_over(zone_x, zone_y);
+    assert_eq!(accepted(&mut window), Some(DndAction::Copy));
+    let folder = window.dir(LAUNCH).join("Press Kit");
+    let list = encode_uri_list([folder.as_path()]);
+    window.app.drop_data(
+        zone_x,
+        zone_y,
+        URI_LIST_MIME,
+        list.as_bytes(),
+        DndAction::Copy,
+    );
+    window.app.advance_ms(600);
+    let pinned = window.answer(|cx, store| store.pinned.get(cx));
+    assert_eq!(pinned.len(), 1);
+    assert_eq!(*pinned[0], *folder);
+    assert!(window.job_commands().is_empty(), "pinning moves nothing");
+    let row = role(Role::MenuItem).name("Press Kit");
+    assert!(window.shows(row));
+    window.answer(|cx, store| crate::app::pinning::unpin(cx, store, &folder));
+    window.app.advance_ms(600);
+    assert!(window.answer(|cx, store| store.pinned.with(cx, Vec::is_empty)));
 }

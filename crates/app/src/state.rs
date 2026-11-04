@@ -15,10 +15,11 @@ use tokio::sync::mpsc::UnboundedSender;
 use crate::{
     app::{
         config_sync::sort_order, conflicts::Conflicts, deleting::Deletion, drag_drop::Dragging,
-        drives::Drives, editing::Editing, file_jobs::Jobs, listing::AfterChange, opening::Opening,
-        peers::Peers, privilege::ElevationPrompt, properties::Properties,
-        quick_look::QuickLookState, storage::Storage, tagging::Tagging, tasks::Task,
-        thumbnails::Thumbnails, type_ahead::TypeAhead,
+        drives::Drives, editing::Editing, file_jobs::Jobs, listing::AfterChange,
+        navigation::has_parent, opening::Opening, peers::Peers, pinning::pinned_in,
+        privilege::ElevationPrompt, properties::Properties, quick_look::QuickLookState,
+        search::Searching, storage::Storage, tagging::Tagging, tasks::Task, thumbnails::Thumbnails,
+        type_ahead::TypeAhead,
     },
     fs::engine::EngineCmd,
     model::{
@@ -29,11 +30,12 @@ use crate::{
     views::{file_menu::MenuPage, focus_slot::FocusSlot},
 };
 
-/// Whether the toolbar's back and forward buttons lead anywhere.
+/// Whether the toolbar's back, forward and up buttons lead anywhere.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct NavigationState {
     pub can_go_back: bool,
     pub can_go_forward: bool,
+    pub can_go_up: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -57,11 +59,13 @@ pub struct Store {
     pub show_hidden: Signal<bool>,
     pub sort: Signal<SortOrder>,
     pub query: Signal<String>,
+    pub searching: Searching,
     pub drives: Drives,
     pub peers: Peers,
     pub storage: Storage,
     /// The configured tags and their colors.
     pub tags: Signal<Vec<TagColor>>,
+    pub pinned: Signal<Vec<Arc<Path>>>,
     pub tagging: Tagging,
     pub properties: Properties,
     pub editing: Signal<Editing>,
@@ -95,6 +99,7 @@ impl Store {
             show_hidden: files.show_hidden,
             filter: None,
         };
+        let can_go_up = has_parent(&dir);
         Self {
             folder: cx.store(Folder::new(dir.clone(), view)),
             history: cx.store(History::default()),
@@ -110,15 +115,20 @@ impl Store {
             revision: cx.signal(0),
             count: cx.signal(0),
             selection_rev: cx.signal(0),
-            navigation: cx.signal(NavigationState::default()),
+            navigation: cx.signal(NavigationState {
+                can_go_up,
+                ..NavigationState::default()
+            }),
             view_mode: cx.signal(files.view_mode),
             show_hidden: cx.signal(files.show_hidden),
             sort: cx.signal(sort),
             query: cx.signal(String::new()),
+            searching: Searching::new(cx),
             drives: Drives::new(cx, files),
             peers: Peers::new(cx),
             storage: Storage::new(cx),
             tags: cx.signal(files.tags.clone()),
+            pinned: cx.signal(pinned_in(files)),
             tagging: Tagging::new(cx),
             properties: Properties::new(cx),
             editing: cx.signal(Editing::Nothing),

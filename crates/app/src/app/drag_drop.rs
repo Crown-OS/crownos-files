@@ -10,26 +10,35 @@ use std::{
 
 use crownui::{
     ext::{DragOverEvent, DropEvent, Modifiers},
-    prelude::{Color, Cx, DndAction, DndActions, DragSource, Event, Runtime, Store as Cell},
+    prelude::{
+        Color, Cx, DndAction, DndActions, DragSource, Event, Runtime, Signal, Store as Cell,
+    },
 };
 
 use crate::{
     app::{
         file_jobs::{Purpose, TransferMode, submit, transfer},
+        pinning::show_pin_zone,
         selection::{ensure_selected, selected_paths},
         spring_load::{SpringLoad, arm, disarm, disarm_from},
         virtual_folder::VirtualFolder,
     },
     fs::mounts::device_id,
     jobs::Job,
-    model::badge::kind_color,
+    model::{badge::kind_color, places::Places},
     state::Store,
     util::{
         clipboard_items::{all_in, file_items, read_files},
         clipboard_payload::{ClipboardAction, URI_LIST_MIME},
-        drag_icon::{DragIconColors, drag_icon},
+        drag_icon::{DragArt, DragIconColors, drag_icon},
     },
-    views::glyph::palette::{FOLDER_FRONT, badge_color},
+    views::{
+        entry_facts::glyph_of,
+        glyph::{
+            palette::{FOLDER_FRONT, badge_color},
+            render_drag_glyph,
+        },
+    },
 };
 
 /// What a drag started here carries, so drops back into the window know it.
@@ -44,6 +53,8 @@ pub struct Dragging {
     sources: Cell<Option<DragSources>>,
     target_device: Cell<Option<(Arc<Path>, Option<u64>)>>,
     pub spring: Cell<SpringLoad>,
+    /// The sidebar's drop zone for pinning folders is open.
+    pub pin_zone: Signal<bool>,
 }
 
 impl Dragging {
@@ -52,7 +63,13 @@ impl Dragging {
             sources: cx.store(None),
             target_device: cx.store(None),
             spring: cx.store(SpringLoad::default()),
+            pin_zone: cx.signal(false),
         }
+    }
+
+    /// The drag in progress started in this window.
+    pub fn is_internal(self, runtime: &Runtime) -> bool {
+        self.sources.with(runtime, Option::is_some)
     }
 }
 
@@ -85,14 +102,16 @@ pub fn start_entry_drag(
 ) {
     ensure_selected(cx, store, position);
     let paths = selected_paths(cx, store);
-    let Some((path, card)) = store.folder.with(cx, |folder| {
+    let places = store.places.with(cx, Places::clone);
+    let Some((path, card, glyph)) = store.folder.with(cx, |folder| {
         let entry = folder.get(position)?;
         let card = if entry.is_dir() {
             FOLDER_FRONT.0
         } else {
             badge_color(kind_color(entry.kind))
         };
-        Some((entry.path_in(folder.dir()), card))
+        let glyph = glyph_of(entry, folder.dir(), &places);
+        Some((entry.path_in(folder.dir()), card, glyph))
     }) else {
         return;
     };
@@ -105,17 +124,24 @@ pub fn start_entry_drag(
         badge,
         badge_text,
     };
-    let icon = drag_icon(swatch.as_ref(), paths.len(), colors, store.scale.get(cx));
+    let scale = store.scale.get(cx);
+    let art = match swatch.as_ref() {
+        Some(swatch) => DragArt::Thumbnail(swatch),
+        None => render_drag_glyph(glyph, scale).map_or(DragArt::Card, DragArt::Rendered),
+    };
+    let icon = drag_icon(art, paths.len(), colors, scale);
     let source = DragSource {
         items: file_items(ClipboardAction::Copy, &paths),
         icon: Some(icon),
         actions: DndActions::COPY_MOVE,
     };
     let device = paths.first().and_then(|path| device_id(path).ok());
+    let carries_folder = paths.iter().any(|path| path.is_dir());
     store
         .drag
         .sources
         .update(cx, |sources| *sources = Some(DragSources { paths, device }));
+    show_pin_zone(cx, store, carries_folder);
     if !cx.start_drag(source, move |cx, _| end_drag(cx, store)) {
         end_drag(cx, store);
     }
@@ -130,6 +156,7 @@ fn end_drag(runtime: &mut Runtime, store: Store) {
         .drag
         .target_device
         .update(runtime, |cached| *cached = None);
+    show_pin_zone(runtime, store, false);
     disarm(runtime, store);
 }
 
@@ -171,6 +198,9 @@ pub fn drag_over_folder(
             (into_itself, all_in(&sources.paths, dir), sources.device)
         })
     });
+    if internal.is_none() {
+        show_pin_zone(cx, store, true);
+    }
     let same_device = match internal {
         Some((true, ..)) => return false,
         Some((false, _, Some(device))) => Some(target_device(cx, store, dir) == Some(device)),
@@ -196,6 +226,7 @@ pub fn leave_folder(runtime: &mut Runtime, store: Store, dir: &Path) {
 /// Files dropped on `dir`: moved or copied as the drop settled.
 pub fn drop_on_folder(cx: &mut Cx, store: Store, dir: &Path, event: &mut Event<DropEvent>) {
     event.stop_propagation();
+    show_pin_zone(cx, store, false);
     disarm(cx, store);
     let Some((_, paths)) = read_files(&event.mime_type, &event.data) else {
         return;
@@ -217,6 +248,7 @@ pub fn drag_over_trash(event: &mut Event<DragOverEvent>) {
 
 pub fn drop_on_trash(cx: &mut Cx, store: Store, event: &mut Event<DropEvent>) {
     event.stop_propagation();
+    show_pin_zone(cx, store, false);
     if let Some((_, paths)) = read_files(&event.mime_type, &event.data) {
         submit(cx, store, Job::Trash(paths), Purpose::Plain);
     }

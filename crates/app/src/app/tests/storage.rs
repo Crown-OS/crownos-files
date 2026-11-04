@@ -69,12 +69,11 @@ fn the_bar_splits_used_space_into_media_documents_and_the_rest() {
 }
 
 #[test]
-fn the_card_and_the_status_bar_show_the_disk_of_the_folder() {
+fn the_card_shows_the_disk_of_the_folder() {
     let mut window = window();
     assert!(window.shows(text("588 GB of 1 TB used")));
-    assert!(window.shows(text("412 GB available")));
     measured(&mut window, space(false));
-    assert!(window.shows(text("400 GB available")));
+    assert!(window.shows(text("588 GB of 1 TB used")));
     assert!(
         drain(&mut window.workers.breakdown).is_empty(),
         "the breakdown is only for the disk home is on"

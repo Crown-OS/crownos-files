@@ -120,6 +120,9 @@ fn empty_message(runtime: &mut Runtime, store: Store) -> String {
     if !empty {
         return String::new();
     }
+    if store.searching.active.get(runtime) {
+        return "Searching…".to_owned();
+    }
     match stage {
         Stage::Loading => "Loading…".to_owned(),
         Stage::Failed(error) => format!("This folder can't be opened: {error}"),

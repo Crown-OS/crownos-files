@@ -20,6 +20,7 @@ crownconfig.workspace = true
 crownos-files-core.workspace = true
 crownos-files-devices.workspace = true
 crownui.workspace = true
+resvg = { workspace = true, features = ["text"] }
 tikv-jemallocator.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true
