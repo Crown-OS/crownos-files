@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+  "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>CrownOS</vendor>
+  <action id="org.crownos.files.helper">
+    <description>Change files that belong to another user</description>
+    <message>Authentication is required to change files that belong to another user</message>
+    <icon_name>system-file-manager</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/crownos-files/crownos-files-helper</annotate>
+  </action>
+</policyconfig>

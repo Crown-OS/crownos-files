@@ -1,0 +1,51 @@
+[package]
+name = "crownos-files-core"
+description = "The directory model, filesystem workers, file jobs, MIME types, thumbnails and openers of CrownOS Files"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[features]
+default = ["thumbs-pdf", "thumbs-video"]
+thumbs-pdf = ["dep:poppler-rs", "dep:cairo-rs"]
+thumbs-video = ["dep:gstreamer", "dep:gstreamer-app", "dep:gstreamer-video"]
+
+[dependencies]
+bitflags.workspace = true
+cairo-rs = { workspace = true, optional = true }
+compact_str.workspace = true
+crownos-ipc.workspace = true
+crownos-preview.workspace = true
+fast_image_resize.workspace = true
+foldhash.workspace = true
+freedesktop_entry_parser.workspace = true
+gstreamer = { workspace = true, optional = true }
+gstreamer-app = { workspace = true, optional = true }
+gstreamer-video = { workspace = true, optional = true }
+hashbrown.workspace = true
+image.workspace = true
+indexmap.workspace = true
+libc.workspace = true
+md-5.workspace = true
+memchr.workspace = true
+notify.workspace = true
+png.workspace = true
+poppler-rs = { workspace = true, optional = true }
+postcard.workspace = true
+quick-xml.workspace = true
+rayon.workspace = true
+resvg.workspace = true
+rustix.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+turbojpeg.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

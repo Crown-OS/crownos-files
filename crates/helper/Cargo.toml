@@ -1,0 +1,21 @@
+[package]
+name = "crownos-files-helper"
+description = "The pkexec helper that performs CrownOS Files operations the user may not do alone"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+crownos-files-devices.workspace = true
+tokio-util.workspace = true
+
+[dev-dependencies]
+crownos-files-core.workspace = true
+tempfile.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread"] }
+
+[lints]
+workspace = true

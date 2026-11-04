@@ -1,64 +1,70 @@
-[package]
-name = "crownos-files"
+[workspace]
+resolver = "3"
+members = ["crates/core", "crates/devices", "crates/helper"]
+default-members = ["crates/helper"]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+repository = "https://github.com/Crown-OS/crownos-files"
+publish = false
 
-[features]
-default = ["thumbs-pdf", "thumbs-video"]
-thumbs-pdf = ["dep:poppler-rs", "dep:cairo-rs"]
-thumbs-video = ["dep:gstreamer", "dep:gstreamer-app", "dep:gstreamer-video"]
+[workspace.dependencies]
+crownos-files-core = { path = "crates/core", default-features = false }
+crownos-files-devices = { path = "crates/devices", default-features = false }
 
-[dependencies]
-anyhow = "1"
-bitflags = "2.13"
-cairo-rs = { version = "0.22", optional = true }
-compact_str = "0.10"
+crownconfig = { path = "../crownui/crownconfig" }
+crownconnect-linux = { path = "../crownconnect-linux", default-features = false }
 crownos-ipc = { path = "../crownos-ipc", features = ["tokio"] }
 crownos-preview = { path = "../crownos-preview", default-features = false }
+crowntest = { path = "../crownui/crowntest" }
+crownui = { path = "../crownui/crownui", features = ["static"] }
+
+anyhow = "1"
+bitflags = "2.13"
+cairo-rs = "0.22"
+compact_str = "0.10"
 fast_image_resize = "6.1"
 foldhash = "0.2"
 freedesktop_entry_parser = "1.3"
-gstreamer = { version = "0.25", optional = true }
-gstreamer-app = { version = "0.25", optional = true }
-gstreamer-video = { version = "0.25", optional = true }
+futures-util = { version = "0.3", default-features = false }
+gstreamer = "0.25"
+gstreamer-app = "0.25"
+gstreamer-video = "0.25"
 hashbrown = "0.17"
-image = { version = "0.25", default-features = false, features = [
-  "bmp",
-  "gif",
-  "ico",
-  "png",
-  "tiff",
-  "webp",
-] }
+image = { version = "0.25", default-features = false, features = ["bmp", "gif", "ico", "png", "tiff", "webp"] }
 indexmap = "2.14"
+insta = "1"
 libc = "0.2"
 md-5 = "0.10"
 memchr = "2.8"
 notify = { version = "8.2", default-features = false }
 png = "0.18"
-poppler-rs = { version = "0.26", optional = true }
+poppler-rs = "0.26"
+postcard = { version = "1", default-features = false, features = ["use-std"] }
 quick-xml = "0.39"
 rayon = "1.12"
 resvg = { version = "0.48", default-features = false }
 rustix = { version = "1.1", features = ["fs", "event", "process"] }
+serde = { version = "1", features = ["derive"] }
+tempfile = "3.27"
 thiserror = "2"
-tokio = { version = "1.54", default-features = false, features = [
-  "macros",
-  "net",
-  "rt",
-  "sync",
-  "time",
-] }
+tikv-jemallocator = "0.6"
+tokio = { version = "1.54", default-features = false, features = ["macros", "net", "rt", "sync", "time"] }
 tokio-util = { version = "0.7.20", default-features = false, features = ["rt"] }
 turbojpeg = { version = "1.5", default-features = false, features = ["pkg-config"] }
+zbus = { version = "5", default-features = false, features = ["tokio"] }
 
-[dev-dependencies]
-tempfile = "3.27"
-
-[lints.clippy]
+[workspace.lints.clippy]
 unwrap_used = "warn"
 expect_used = "warn"
 dbg_macro = "warn"
+
+# crownconnect-linux names crownos-ipc by its git URL: one checkout for both,
+# or their IPC traits would be two different crates.
+[patch."https://github.com/crown-os/crownos-ipc"]
+crownos-ipc = { path = "../crownos-ipc" }
 
 [profile.release]
 lto = "fat"

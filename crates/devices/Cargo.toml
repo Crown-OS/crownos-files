@@ -1,0 +1,32 @@
+[package]
+name = "crownos-files-devices"
+description = "Removable drives, free space, privileged operations, tags and paired devices for CrownOS Files"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[features]
+default = ["connect"]
+connect = ["dep:crownconnect-linux"]
+
+[dependencies]
+compact_str.workspace = true
+crownconnect-linux = { workspace = true, optional = true }
+crownos-files-core.workspace = true
+crownos-ipc.workspace = true
+futures-util.workspace = true
+postcard.workspace = true
+rustix.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["io-util", "process"] }
+tokio-util.workspace = true
+zbus.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true
