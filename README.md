@@ -53,7 +53,7 @@ cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-Path dependencies are expected next to this checkout: `../crownos-ipc`,
+Path dependencies are expected next to this checkout: `../crownui`, `../crownos-ipc`,
 `../crownos-preview`, `../crownconnect-linux`.
 
 Features, all on by default:
@@ -68,9 +68,12 @@ Features, all on by default:
 |---|---|
 | `crownos-files` | `/usr/bin/crownos-files` |
 | `crownos-files-helper` | `/usr/lib/crownos-files/crownos-files-helper` |
-| `crates/app/data/crownos-files.desktop` | `/usr/share/applications/crownos-files.desktop` |
-| `crates/helper/data/org.crownos.files.helper.policy` | `/usr/share/polkit-1/actions/org.crownos.files.helper.policy` |
+| `data/crownos-files.desktop` | `/usr/share/applications/crownos-files.desktop` |
+| `data/org.crownos.files.helper.policy` | `/usr/share/polkit-1/actions/org.crownos.files.helper.policy` |
 
 Make Files the folder handler with
 `xdg-mime default crownos-files.desktop inode/directory`. Drives need
 `udisks2`; polkit prompts need a running polkit agent.
+
+`packaging/PKGBUILD` installs all of the above; a `v*` tag builds it and
+attaches the package to the GitHub release.

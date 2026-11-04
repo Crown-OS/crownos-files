@@ -1,10 +1,13 @@
 [Desktop Entry]
 Type=Application
 Name=Files
+GenericName=File Manager
 Comment=Browse and manage your files
 Exec=crownos-files %U
 Icon=system-file-manager
 Terminal=false
 Categories=System;FileTools;FileManager;
+Keywords=folder;directory;explorer;browse;drive;
 MimeType=inode/directory;
+StartupNotify=true
 StartupWMClass=crownos-files

@@ -1,0 +1,48 @@
+# Maintainer: marvelxcodes <ramakrishnan0046@gmail.com>
+#
+# Builds the checkout this file lives in, so run makepkg from packaging/ with
+# the sibling path dependencies checked out next to the repository, as
+# .github/workflows/release.yml does: ../crownui, ../crownos-ipc,
+# ../crownos-preview and ../crownconnect-linux.
+
+pkgname=crownos-files
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="The CrownOS file manager"
+arch=(x86_64)
+url="https://github.com/Crown-OS/crownos-files"
+license=(MIT)
+depends=(
+  glibc gcc-libs glib2 cairo poppler-glib libjpeg-turbo fontconfig freetype2
+  gstreamer gst-plugins-base-libs gst-plugins-base gst-plugins-good
+  wayland libxkbcommon vulkan-icd-loader libx11 libxcb systemd-libs
+  udisks2 polkit util-linux
+)
+makedepends=(cargo clang)
+optdepends=(
+  'crownos-preview: quick look'
+  'crownconnect-linux: send files to paired devices'
+  'gst-libav: thumbnails of more video formats'
+)
+options=(!lto !debug)
+
+_workspace="$startdir/.."
+
+prepare() {
+  cd "$_workspace"
+  cargo fetch --locked --target "$(rustc -vV | sed -n 's/^host: //p')"
+}
+
+build() {
+  cd "$_workspace"
+  export CARGO_TARGET_DIR="$srcdir/target"
+  cargo build --release --frozen -p crownos-files -p crownos-files-helper
+}
+
+package() {
+  cd "$_workspace"
+  install -Dm755 "$srcdir/target/release/crownos-files" -t "$pkgdir/usr/bin"
+  install -Dm755 "$srcdir/target/release/crownos-files-helper" -t "$pkgdir/usr/lib/crownos-files"
+  install -Dm644 data/crownos-files.desktop -t "$pkgdir/usr/share/applications"
+  install -Dm644 data/org.crownos.files.helper.policy -t "$pkgdir/usr/share/polkit-1/actions"
+}

@@ -1,0 +1,70 @@
+# Builds the crownos-files package from packaging/PKGBUILD on a v* tag and
+# publishes it on the release, where Crown-OS/crownos-iso picks it up.
+#
+# Crown-OS/.github's arch-package.yml puts every binary in /usr/bin, but pkexec
+# runs the helper from /usr/lib/crownos-files and the polkit action and desktop
+# entry ship too, so this builds our own PKGBUILD instead.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  PACKAGES: glib2 cairo poppler-glib gstreamer gst-plugins-base-libs gst-plugins-base libjpeg-turbo
+
+jobs:
+  package:
+    name: build and publish
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: Crown-OS/.github/.github/actions/prepare-workspace@main
+        with:
+          packages: ${{ env.PACKAGES }}
+          toolchain: 1.97.1
+
+      - name: Package
+        run: |
+          if [[ $GITHUB_REF_TYPE == tag ]]; then
+            version=${GITHUB_REF_NAME#v}
+            sed -i "s/^pkgver=.*/pkgver=${version//-/_}/" crownos-files/packaging/PKGBUILD
+          fi
+          useradd --create-home builder
+          mkdir -p out
+          chown -R builder .
+          runuser -u builder -- rustup default 1.97.1
+          cd crownos-files/packaging
+          runuser -u builder -- env PKGDEST="$GITHUB_WORKSPACE/out" makepkg --nodeps --noconfirm
+
+      - name: Publish release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
+            gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes
+          gh release upload "$GITHUB_REF_NAME" out/*.pkg.tar.zst --repo "$GITHUB_REPOSITORY" --clobber
+
+  notify-iso:
+    name: rebuild the ISO
+    needs: package
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.CROWNOS_ISO_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::notice::CROWNOS_ISO_DISPATCH_TOKEN is not set; crownos-iso picks this release up on its next build."
+            exit 0
+          fi
+          gh api repos/Crown-OS/crownos-iso/dispatches \
+            -f event_type=component-updated -f "client_payload[repository]=$GITHUB_REPOSITORY"
