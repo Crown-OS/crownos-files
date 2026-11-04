@@ -1,6 +1,7 @@
 //! Opening files: routing, XDG MIME associations, desktop entries,
 //! detached launching and the recently-used list.
 
+pub mod app_icon;
 mod associations;
 pub mod desktop_entry;
 pub mod error;
@@ -10,6 +11,7 @@ pub mod mimeapps;
 pub mod recent;
 pub mod routing;
 
+pub use app_icon::IconThemes;
 pub use desktop_entry::DesktopEntry;
 pub use error::OpenError;
 pub use launch::launch;

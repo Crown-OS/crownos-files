@@ -4,47 +4,28 @@ use crownconfig::ViewMode;
 use crownui::prelude::{Cx, Runtime};
 
 use crate::{
-    app::{editing::start_rename, navigation::open_dir, tasks::Task},
+    app::{
+        editing::start_rename, navigation::open_dir, opening::open_selection, tasks::Task,
+        virtual_folder::VirtualFolder,
+    },
     state::Store,
 };
 
 /// Actions whose backends arrive with the next milestones; each says so when used.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Deferred {
-    Recents,
-    OpenFile,
-    OpenWith,
-    QuickLook,
-    Copy,
-    Cut,
-    Paste,
-    Duplicate,
     Compress,
     Tags,
     SendToDevice,
-    Trash,
-    DeletePermanently,
-    Undo,
     Properties,
 }
 
 impl Deferred {
     fn label(self) -> &'static str {
         match self {
-            Self::Recents => "Recents",
-            Self::OpenFile => "Opening files",
-            Self::OpenWith => "Open With",
-            Self::QuickLook => "Quick Look",
-            Self::Copy => "Copy",
-            Self::Cut => "Cut",
-            Self::Paste => "Paste",
-            Self::Duplicate => "Duplicate",
             Self::Compress => "Compress",
             Self::Tags => "Tags",
             Self::SendToDevice => "Send to device",
-            Self::Trash => "Move to Trash",
-            Self::DeletePermanently => "Delete",
-            Self::Undo => "Undo",
             Self::Properties => "Properties",
         }
     }
@@ -70,37 +51,33 @@ pub fn open_position(cx: &mut Cx, store: Store, position: usize) {
     }
 }
 
-/// Enter and the details panel's Open: one selected folder navigates, files open.
-pub fn open_selection(cx: &mut Cx, store: Store) {
-    let (folder_path, any_selected) = store.folder.with(cx, |folder| {
-        let mut selected = folder.selected_entries();
-        let first = selected.next();
-        let only_dir = first
-            .filter(|entry| entry.is_dir())
-            .filter(|_| selected.next().is_none())
-            .map(|entry| entry.path_in(folder.dir()));
-        (only_dir, first.is_some())
-    });
-    match folder_path {
-        Some(path) => open_dir(cx, store, path.into()),
-        None if any_selected => deferred(cx, store, Deferred::OpenFile),
-        None => {}
-    }
-}
-
+/// F2: renames the entry under the cursor; what is in the trash keeps its name.
 pub fn rename_cursor(runtime: &mut Runtime, store: Store) {
     let position = store.folder.with(runtime, |folder| {
         let cursor = folder.cursor();
-        folder.is_selected(cursor).then_some(cursor)
+        let renamable = VirtualFolder::of(folder.dir()) != Some(VirtualFolder::Trash);
+        (renamable && folder.is_selected(cursor)).then_some(cursor)
     });
     if let Some(position) = position {
         start_rename(runtime, store, position);
     }
 }
 
-pub fn new_folder(runtime: &mut Runtime, store: Store) {
-    let dir = store.dir(runtime).to_path_buf();
-    store.run(runtime, Task::CreateFolder { dir });
+pub fn new_folder(cx: &mut Cx, store: Store) {
+    let dir = store.dir(cx);
+    if let Some(folder) = VirtualFolder::of(&dir) {
+        store.toasts.show(
+            cx,
+            format!("Folders can't be created in {}", folder.label()),
+        );
+        return;
+    }
+    store.run(
+        cx,
+        Task::CreateFolder {
+            dir: dir.to_path_buf(),
+        },
+    );
 }
 
 pub fn toggle_hidden(runtime: &mut Runtime, store: Store) {

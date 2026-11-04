@@ -1,8 +1,12 @@
-use std::path::Path;
+use std::{path::Path, sync::Arc};
 
 use crate::{
+    app::{thumbnails::thumb_source, virtual_folder::VirtualFolder},
     model::{entry::Entry, places::Places},
-    util::{friendly_date::Today, kind_label::kind_label, size_label::size_label},
+    util::{
+        friendly_date::Today, kind_label::kind_label, size_label::size_label,
+        thumb_store::ThumbSource,
+    },
     views::glyph::Glyph,
 };
 
@@ -14,6 +18,9 @@ pub struct EntryFacts {
     pub kind: String,
     pub modified: String,
     pub glyph: Glyph,
+    pub thumb: Option<ThumbSource>,
+    /// The entry's path when it is a folder, a place to drop files on.
+    pub folder: Option<Arc<Path>>,
 }
 
 impl EntryFacts {
@@ -22,12 +29,16 @@ impl EntryFacts {
             .is_dir()
             .then(|| places.special(&entry.path_in(dir)))
             .flatten();
+        let glyph = Glyph::for_entry(entry, special);
         Self {
             name: entry.name.to_string(),
             size: size_label(entry).into_owned(),
             kind: kind_label(entry).into_owned(),
             modified: today.describe(entry.stat.modified).unwrap_or_default(),
-            glyph: Glyph::for_entry(entry, special),
+            glyph,
+            thumb: thumb_source(entry, dir, glyph),
+            folder: (entry.is_dir() && VirtualFolder::of(dir) != Some(VirtualFolder::Trash))
+                .then(|| entry.path_in(dir).into()),
         }
     }
 }
@@ -40,6 +51,8 @@ impl Default for EntryFacts {
             kind: String::new(),
             modified: String::new(),
             glyph: Glyph::Page(None),
+            thumb: None,
+            folder: None,
         }
     }
 }

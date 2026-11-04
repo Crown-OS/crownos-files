@@ -36,5 +36,11 @@ pub fn stripe_wash(theme: &Theme) -> Color {
     theme.surface.hover.with_alpha_factor(STRIPE_WASH_FACTOR)
 }
 
+/// The accent wash behind a folder a drag would drop into.
+pub fn drop_wash(theme: &Theme) -> Color {
+    theme.accent.start.with_alpha_factor(DROP_WASH_FACTOR)
+}
+
+const DROP_WASH_FACTOR: f32 = 0.28;
 const SELECTED_WASH_FACTOR: f32 = 1.6;
 const STRIPE_WASH_FACTOR: f32 = 0.35;

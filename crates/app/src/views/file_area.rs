@@ -11,16 +11,21 @@ use crownui::{
 };
 
 use crate::{
-    app::selection::clear,
+    app::{
+        drag_drop::{drag_over_folder, drop_on_folder, start_entry_drag},
+        selection::clear,
+    },
     model::folder::Stage,
     state::Store,
     util::theme::tint,
     views::{
+        elevation_callout::elevation_callout,
         file_grid::file_grid,
         file_list::file_list,
         file_menu::open_menu,
         focus_slot::focus_slot,
-        rubber_band::{extend_band, finish_band, rubber_band, start_band},
+        rubber_band::{entry_at, extend_band, finish_band, rubber_band, start_band},
+        trash_bar::trash_bar,
     },
 };
 
@@ -46,41 +51,63 @@ pub fn file_area(cx: &mut Cx, store: Store) -> impl View + use<> {
     .justify_center()
     .pointer_events_none();
 
-    let area = zstack((views, rubber_band(cx, store), message))
-        .flex_1()
-        .min_w(0.0)
-        .min_h(0.0)
-        .focusable(true)
-        .role(Role::List)
-        .label("Files")
-        .on_pointer_down(move |cx, event| {
-            store
-                .pointer
-                .update(cx, |pointer| *pointer = event.position);
-        })
-        .on_click(move |cx, _| clear(cx, store))
-        .on_context_menu(move |cx, _| {
-            clear(cx, store);
-            open_menu(cx, store);
-        })
-        .on_drag_start(move |cx, event| {
-            start_band(cx, store, event.position);
-            let origin = store.band.with(cx, |band| band.map(|band| band.origin));
-            anchor.update(cx, |anchor| *anchor = origin);
-        })
-        .on_drag(move |cx, event| {
-            if let Some(origin) = anchor.with(cx, |anchor| *anchor) {
-                extend_band(cx, store, event.position, origin);
-            }
-        })
-        .on_drag_end(move |cx, _| {
-            anchor.update(cx, |anchor| *anchor = None);
-            finish_band(cx, store);
-        });
-    focus_slot(area, store.file_area)
-        .flex_1()
-        .min_w(0.0)
-        .min_h(0.0)
+    let area = zstack((
+        views,
+        rubber_band(cx, store),
+        message,
+        elevation_callout(cx, store),
+    ))
+    .flex_1()
+    .min_w(0.0)
+    .min_h(0.0)
+    .focusable(true)
+    .role(Role::List)
+    .label("Files")
+    .on_pointer_down(move |cx, event| {
+        store
+            .pointer
+            .update(cx, |pointer| *pointer = event.position);
+    })
+    .on_click(move |cx, _| clear(cx, store))
+    .on_context_menu(move |cx, _| {
+        clear(cx, store);
+        open_menu(cx, store);
+    })
+    .on_drag_start(move |cx, event| {
+        if let Some(position) = entry_at(cx, store, event.position) {
+            let (badge, badge_text) =
+                theme.with(cx, |theme| (theme.accent.start, theme.text.on_accent));
+            start_entry_drag(cx, store, position, badge, badge_text);
+            return;
+        }
+        start_band(cx, store, event.position);
+        let origin = store.band.with(cx, |band| band.map(|band| band.origin));
+        anchor.update(cx, |anchor| *anchor = origin);
+    })
+    .on_drag(move |cx, event| {
+        if let Some(origin) = anchor.with(cx, |anchor| *anchor) {
+            extend_band(cx, store, event.position, origin);
+        }
+    })
+    .on_drag_end(move |cx, _| {
+        anchor.update(cx, |anchor| *anchor = None);
+        finish_band(cx, store);
+    })
+    .on_drag_over(move |cx, event| {
+        let dir = store.dir(cx);
+        drag_over_folder(cx, store, &dir, false, event);
+    })
+    .on_drop(move |cx, event| {
+        let dir = store.dir(cx);
+        drop_on_folder(cx, store, &dir, event);
+    });
+    vstack((
+        trash_bar(cx, store),
+        focus_slot(area, store.file_area).flex_1().min_h(0.0),
+    ))
+    .flex_1()
+    .min_w(0.0)
+    .min_h(0.0)
 }
 
 fn empty_message(runtime: &mut Runtime, store: Store) -> String {

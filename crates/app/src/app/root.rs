@@ -13,10 +13,15 @@ use tokio::sync::{
 use crate::{
     app::{
         config_sync::sync_config,
+        file_jobs::{finish_jobs, run_jobs},
         listing::apply_ops,
         navigation::load_current,
+        opener::run_opener,
+        opening::finish_opening,
+        quick_look::{finish_quick_look, run_quick_look},
         shell::shell,
         tasks::{finish_tasks, run_tasks},
+        thumbnails::{finish_thumbnails, run_thumbnailer},
     },
     fs::{
         engine::{EngineCmd, run_engine},
@@ -57,6 +62,28 @@ fn start_workers(cx: &mut Cx, store: Store) {
     store.engine.update(cx, |slot| *slot = Some(engine));
     let tasks = spawn_worker(cx, run_tasks, move |cx, done| finish_tasks(cx, store, done));
     store.tasks.update(cx, |slot| *slot = Some(tasks));
+    let thumbnailer = spawn_worker(cx, run_thumbnailer, move |cx, events| {
+        finish_thumbnails(cx, store, events);
+    });
+    store
+        .thumbs
+        .service
+        .update(cx, |slot| *slot = Some(thumbnailer));
+    let opener = spawn_worker(cx, run_opener, move |cx, events| {
+        finish_opening(cx, store, events);
+    });
+    store.opening.sender.update(cx, |slot| *slot = Some(opener));
+    let viewer = spawn_worker(cx, run_quick_look, move |cx, events| {
+        finish_quick_look(cx, store, events);
+    });
+    store
+        .quick_look
+        .sender
+        .update(cx, |slot| *slot = Some(viewer));
+    let jobs = spawn_worker(cx, run_jobs, move |cx, updates| {
+        finish_jobs(cx, store, updates)
+    });
+    store.jobs.sender.update(cx, |slot| *slot = Some(jobs));
 }
 
 async fn serve_engine(ops: UnboundedSender<FilesOp>, commands: UnboundedReceiver<EngineCmd>) {

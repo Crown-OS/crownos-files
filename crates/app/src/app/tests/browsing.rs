@@ -1,156 +1,23 @@
-//! The whole window driven headlessly over the mockup's folder: no engine,
-//! no config files; engine commands are caught on a channel instead.
+//! Browsing: listing, selecting, keyboard, view modes, search, history,
+//! renaming, the rubber band and the snapshots of both views.
 
-use std::{path::Path, sync::Arc};
+use std::path::Path;
 
-use crowntest::{Role, TestApp, name, role, text};
+use crowntest::{Role, name, role, text};
 use crownui::{
     ext::Modifiers,
     kit::{Theme, provide_theme},
     prelude::component,
 };
-use tempfile::TempDir;
-use tokio::sync::mpsc::{UnboundedReceiver, unbounded_channel};
 
-use super::{
-    fixtures::{LAUNCH, mockup_home, mockup_store},
-    shell::shell,
-};
-use crate::fs::engine::EngineCmd;
-
-const WIDTH: f32 = 1100.0;
-const HEIGHT: f32 = 700.0;
-
-/// The 16 visible entries in name order, folders first.
-const LISTED: [&str; 16] = [
-    "Brand",
-    "Press Kit",
-    "Renders",
-    "Soundtrack",
-    "aurora-wallpaper.avif",
-    "benchmarks.csv",
-    "compositor.rs",
-    "crownbook-hero.png",
-    "crownos-2026.11-x86_64.iso",
-    "interview.flac",
-    "keynote.pdf",
-    "launch-assets.tar.zst",
-    "launch-film.webm",
-    "launch-plan.odt",
-    "palette.svg",
-    "release-notes.md",
-];
-
-struct Window {
-    app: TestApp,
-    engine: UnboundedReceiver<EngineCmd>,
-    home: TempDir,
-}
-
-fn window_with(theme: Theme) -> Window {
-    let home = mockup_home();
-    let path = home.path().to_path_buf();
-    let (commands, engine) = unbounded_channel();
-    let app = TestApp::with_size(
-        component(move |cx| {
-            provide_theme(cx, theme);
-            let store = mockup_store(cx, &path);
-            store.engine.update(cx, |slot| *slot = Some(commands));
-            shell(cx, store)
-        }),
-        WIDTH,
-        HEIGHT,
-    );
-    let mut window = Window { app, engine, home };
-    window.app.settle();
-    window
-}
-
-fn window() -> Window {
-    window_with(Theme::dark())
-}
-
-impl Window {
-    fn entry(&self, entry: &str) -> crowntest::Query {
-        role(Role::ListItem).name(entry)
-    }
-
-    fn click(&mut self, entry: &str) -> &mut Self {
-        let query = self.entry(entry);
-        self.app.click(query).settle();
-        self.focus_files();
-        self
-    }
-
-    fn focus_files(&mut self) {
-        self.app.focus(role(Role::List).name("Files")).settle();
-    }
-
-    fn click_with(&mut self, entry: &str, modifiers: Modifiers) -> &mut Self {
-        self.app.hold_modifiers(modifiers);
-        self.click(entry);
-        self.app.hold_modifiers(Modifiers::NONE);
-        self
-    }
-
-    fn key(&mut self, shortcut: &str) -> &mut Self {
-        if self.app.ui().focused_semantic_id().is_none() {
-            self.focus_files();
-        }
-        self.app.press_key(shortcut).settle();
-        self
-    }
-
-    fn selected(&mut self) -> Vec<&'static str> {
-        LISTED
-            .into_iter()
-            .filter(|entry| {
-                let query = self.entry(entry);
-                self.app.exists(query.clone())
-                    && self.app.find(query).value.as_deref() == Some("selected")
-            })
-            .collect()
-    }
-
-    fn shows(&mut self, query: crowntest::Query) -> bool {
-        self.app.count(query) > 0
-    }
-
-    fn status(&mut self) -> String {
-        let is_status = |name: &str| {
-            let counted = name.split(',').next().unwrap_or_default();
-            counted
-                .strip_suffix(" items")
-                .or_else(|| counted.strip_suffix(" item"))
-                .is_some_and(|count| count.parse::<usize>().is_ok())
-        };
-        self.app
-            .ui()
-            .semantic_tree()
-            .iter()
-            .filter(|node| node.role == Role::Text)
-            .filter_map(|node| node.name.clone())
-            .filter(|name| is_status(name))
-            .last()
-            .unwrap_or_default()
-    }
-
-    fn dir(&self, relative: &str) -> Arc<Path> {
-        self.home.path().join(relative).into()
-    }
-
-    fn engine_commands(&mut self) -> Vec<EngineCmd> {
-        std::iter::from_fn(|| self.engine.try_recv().ok()).collect()
-    }
-}
-
-const CTRL: Modifiers = Modifiers {
-    ctrl_key: true,
-    ..Modifiers::NONE
-};
-const SHIFT: Modifiers = Modifiers {
-    shift_key: true,
-    ..Modifiers::NONE
+use super::window::{CTRL, HEIGHT, LISTED, SHIFT, WIDTH, window, window_with};
+use crate::{
+    app::{
+        fixtures::{LAUNCH, mockup_home, mockup_store},
+        selection::click,
+        shell::shell,
+    },
+    fs::engine::EngineCmd,
 };
 
 #[test]
@@ -496,7 +363,7 @@ fn render_the_mockup() {
         let path = home.path().to_path_buf();
         let root = component(move |cx| {
             provide_theme(cx, theme);
-            let store = super::fixtures::mockup_store(cx, &path);
+            let store = mockup_store(cx, &path);
             if list {
                 store.view_mode.set(cx, crownconfig::ViewMode::List);
             }
@@ -504,7 +371,7 @@ fn render_the_mockup() {
                 .folder
                 .with(cx, |folder| folder.position_of("aurora-wallpaper.avif"));
             if let Some(position) = aurora {
-                super::selection::click(cx, store, position, Modifiers::NONE);
+                click(cx, store, position, Modifiers::NONE);
             }
             shell(cx, store)
         });

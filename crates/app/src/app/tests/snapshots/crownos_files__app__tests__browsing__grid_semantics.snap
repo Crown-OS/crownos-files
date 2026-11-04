@@ -1,5 +1,5 @@
 ---
-source: crates/app/src/app/tests.rs
+source: crates/app/src/app/tests/browsing.rs
 expression: window.app.semantics_snapshot()
 ---
 window @0,0 1100x700

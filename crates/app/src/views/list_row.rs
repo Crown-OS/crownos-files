@@ -1,8 +1,8 @@
 use crownui::{
     kit::{INTER_FAMILY, use_theme},
     prelude::{
-        Cx, Listeners, Role, Runtime, Semantic, Spring, Styled, TRANSPARENT, View, bind, hstack,
-        show, text, vstack,
+        AnyView, Cx, Listeners, Role, Runtime, Semantic, Spring, Styled, TRANSPARENT, View, bind,
+        hstack, show, text, vstack,
     },
 };
 
@@ -12,12 +12,13 @@ use crate::{
         selection::{click, ensure_selected},
     },
     state::Store,
-    util::theme::{hover_wash, stripe_wash},
+    util::theme::{drop_wash, hover_wash, stripe_wash},
     views::{
+        drop_target::folder_drop_target,
         entry_facts::EntryFacts,
+        entry_picture::entry_picture,
         entry_state::{is_renaming, is_selected, selection_value},
         file_menu::open_menu,
-        glyph::glyph_view,
         metrics::{LIST_ICON, ROW_HEIGHT},
         rename_field::rename_field,
     },
@@ -31,10 +32,11 @@ const NAME_SIZE: f32 = 12.0;
 const DETAIL_SIZE: f32 = 11.0;
 
 /// One row of the list view: glyph, name, kind, date and size.
-pub fn list_row(cx: &mut Cx, store: Store, position: usize) -> impl View + use<> {
+pub fn list_row(cx: &mut Cx, store: Store, position: usize) -> AnyView {
     let theme = use_theme(cx);
     let facts = EntryFacts::at(cx, store, position);
     let hovered = cx.signal(false);
+    let drop_hovered = cx.signal(false);
     let striped = position % 2 == 1;
     let selected = move |runtime: &mut Runtime| is_selected(runtime, store, position);
     let detail_color = move |runtime: &mut Runtime| {
@@ -56,12 +58,17 @@ pub fn list_row(cx: &mut Cx, store: Store, position: usize) -> impl View + use<>
             .truncate()
     };
 
-    let icon = vstack(glyph_view(facts.glyph, GLYPH_SCALE))
-        .w(LIST_ICON)
-        .h(LIST_ICON)
-        .shrink(0.0)
-        .items_center()
-        .justify_center();
+    let icon = vstack(entry_picture(
+        store,
+        facts.glyph,
+        facts.thumb.clone(),
+        GLYPH_SCALE,
+    ))
+    .w(LIST_ICON)
+    .h(LIST_ICON)
+    .shrink(0.0)
+    .items_center()
+    .justify_center();
     let label = facts.name.clone();
     let name = hstack(
         show(
@@ -82,7 +89,8 @@ pub fn list_row(cx: &mut Cx, store: Store, position: usize) -> impl View + use<>
     .flex_1()
     .min_w(0.0);
 
-    hstack((
+    let folder = facts.folder.clone();
+    let row = hstack((
         icon,
         name,
         detail(facts.kind, KIND_WIDTH),
@@ -98,11 +106,15 @@ pub fn list_row(cx: &mut Cx, store: Store, position: usize) -> impl View + use<>
     .bg(bind(move |runtime: &mut Runtime| {
         let selected = selected(runtime);
         let hovered = hovered.get(runtime);
-        theme.with(runtime, |theme| match (selected, hovered, striped) {
-            (true, _, _) => theme.accent.end,
-            (false, true, _) => hover_wash(theme),
-            (false, false, true) => stripe_wash(theme),
-            (false, false, false) => TRANSPARENT,
+        let dropping = drop_hovered.get(runtime);
+        theme.with(runtime, |theme| {
+            match (dropping, selected, hovered, striped) {
+                (true, ..) => drop_wash(theme),
+                (false, true, _, _) => theme.accent.end,
+                (false, false, true, _) => hover_wash(theme),
+                (false, false, false, true) => stripe_wash(theme),
+                (false, false, false, false) => TRANSPARENT,
+            }
         })
     }))
     .text_color(bind(move |runtime: &mut Runtime| {
@@ -135,5 +147,9 @@ pub fn list_row(cx: &mut Cx, store: Store, position: usize) -> impl View + use<>
         event.stop_propagation();
         ensure_selected(cx, store, position);
         open_menu(cx, store);
-    })
+    });
+    match folder {
+        Some(dir) => folder_drop_target(row, store, dir, drop_hovered).boxed(),
+        None => row.boxed(),
+    }
 }

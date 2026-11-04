@@ -8,11 +8,13 @@ mod disc;
 mod folder;
 mod page;
 mod paint;
-mod palette;
+pub mod palette;
 mod photo;
 mod sheet;
 mod video;
 mod view;
 
 pub use choice::Glyph;
+pub use photo::PHOTO_SIZE;
+pub use video::play_mark;
 pub use view::glyph_view;

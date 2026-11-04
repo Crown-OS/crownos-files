@@ -14,18 +14,17 @@ use crownui::{
 };
 
 use crate::{
-    app::{
-        actions::{Deferred, deferred},
-        navigation::open_dir,
-    },
+    app::{navigation::open_dir, virtual_folder::VirtualFolder},
     model::{
         device_entry::{DeviceEntry, DeviceKind},
-        places::Places,
         special_dir::SpecialDir,
     },
     state::Store,
     util::theme::tint,
-    views::storage_card::storage_card,
+    views::{
+        drop_target::{folder_drop_target, trash_drop_target},
+        storage_card::storage_card,
+    },
 };
 
 const STATUS_DOT: f32 = 7.0;
@@ -41,10 +40,11 @@ pub fn sidebar(cx: &mut Cx, store: Store) -> impl ViewSeq + use<> {
 }
 
 fn favorites(cx: &mut Cx, store: Store) -> impl View + use<> {
-    let rows: Vec<AnyView> = store.places.with(cx, |places| {
+    let candidates = store.places.with(cx, |places| {
         let special = |dir| places.path(dir).map(Arc::<Path>::from);
-        let candidates = [
-            ("Recents", icons::CLOCK, None),
+        let has_trash = places.trash.is_some();
+        [
+            ("Recents", icons::CLOCK, Some(VirtualFolder::Recents.path())),
             ("Home", icons::HOUSE, places.home.as_deref().map(Arc::from)),
             ("Desktop", icons::MONITOR, special(SpecialDir::Desktop)),
             (
@@ -56,39 +56,43 @@ fn favorites(cx: &mut Cx, store: Store) -> impl View + use<> {
             ("Pictures", icons::IMAGE, special(SpecialDir::Pictures)),
             ("Videos", icons::VIDEO, special(SpecialDir::Videos)),
             ("Music", icons::MUSIC, special(SpecialDir::Music)),
-            ("Trash", icons::TRASH_2, trash(places)),
-        ];
-        candidates
-            .into_iter()
-            .filter(|(label, _, dir)| {
-                *label == "Recents" || dir.as_deref().is_some_and(Path::is_dir)
-            })
-            .map(|(label, icon, dir)| place(store, label, icon, dir))
-            .collect()
+            (
+                "Trash",
+                icons::TRASH_2,
+                has_trash.then(|| VirtualFolder::Trash.path()),
+            ),
+        ]
     });
+    let rows: Vec<AnyView> = candidates
+        .into_iter()
+        .filter_map(|(label, icon, dir)| {
+            let dir = dir.filter(|dir| VirtualFolder::of(dir).is_some() || dir.is_dir())?;
+            Some(place(cx, store, label, icon, dir))
+        })
+        .collect();
     sidebar_section("Favorites", rows)
 }
 
-fn trash(places: &Places) -> Option<Arc<Path>> {
-    places.trash.as_deref().map(Arc::from)
-}
-
-fn place(store: Store, label: &'static str, icon: &'static str, dir: Option<Arc<Path>>) -> AnyView {
+fn place(
+    cx: &mut Cx,
+    store: Store,
+    label: &'static str,
+    icon: &'static str,
+    dir: Arc<Path>,
+) -> AnyView {
     let current = dir.clone();
-    sidebar_item(
+    let opened = dir.clone();
+    let item = sidebar_item(
         label,
         icon,
-        bind(move |runtime: &mut Runtime| {
-            current
-                .as_ref()
-                .is_some_and(|dir| store.cwd.with(runtime, |cwd| cwd == dir))
-        }),
+        bind(move |runtime: &mut Runtime| store.cwd.with(runtime, |cwd| *cwd == current)),
     )
-    .on_click(move |cx, _| match &dir {
-        Some(dir) => open_dir(cx, store, dir.clone()),
-        None => deferred(cx, store, Deferred::Recents),
-    })
-    .boxed()
+    .on_click(move |cx, _| open_dir(cx, store, opened.clone()));
+    match VirtualFolder::of(&dir) {
+        Some(VirtualFolder::Trash) => trash_drop_target(item, store).boxed(),
+        Some(VirtualFolder::Recents) => item.boxed(),
+        None => folder_drop_target(item, store, dir, cx.signal(false)).boxed(),
+    }
 }
 
 fn devices(store: Store) -> impl View {
@@ -120,7 +124,7 @@ fn device_row(cx: &mut Cx, store: Store, device: Signal<DeviceEntry>) -> AnyView
         DeviceKind::Drive => {
             let mount = entry.mount.clone();
             let selected = mount.clone();
-            sidebar_item(
+            let item = sidebar_item(
                 entry.name.clone(),
                 icons::HARD_DRIVE,
                 bind(move |runtime: &mut Runtime| {
@@ -137,8 +141,11 @@ fn device_row(cx: &mut Cx, store: Store, device: Signal<DeviceEntry>) -> AnyView
                 if let Some(dir) = &mount {
                     open_dir(cx, store, dir.clone());
                 }
-            })
-            .boxed()
+            });
+            match entry.mount {
+                Some(dir) => folder_drop_target(item, store, dir, cx.signal(false)).boxed(),
+                None => item.boxed(),
+            }
         }
         DeviceKind::Phone => sidebar_item(entry.name, icons::SMARTPHONE, false)
             .trailing(

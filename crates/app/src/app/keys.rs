@@ -10,12 +10,14 @@ use crownui::{
 
 use crate::{
     app::{
-        actions::{
-            Deferred, deferred, new_folder, open_selection, rename_cursor, set_view_mode,
-            toggle_hidden,
-        },
+        actions::{new_folder, rename_cursor, set_view_mode, toggle_hidden},
+        clipboard::{copy_selection, cut_selection, paste},
+        deleting::{delete_selection, trash_selection},
         editing::{Editing, cancel, start_path_edit},
+        file_jobs::undo,
         navigation::{go_back, go_forward, go_up},
+        opening::open_selection,
+        quick_look::toggle_quick_look,
         selection::{clear, move_cursor, select_all},
         type_ahead::starts_with_folded,
     },
@@ -65,14 +67,10 @@ fn shortcut(cx: &mut Cx, store: Store, key: Key, modifiers: Modifiers) -> bool {
         Key::Named(NamedKey::ArrowUp) if modifiers.alt_key => go_up(cx, store),
         Key::Named(NamedKey::Backspace) => go_up(cx, store),
         Key::Named(NamedKey::Enter) => open_selection(cx, store),
-        Key::Named(NamedKey::Space) | Key::Character(' ') => {
-            deferred(cx, store, Deferred::QuickLook);
-        }
+        Key::Named(NamedKey::Space) | Key::Character(' ') => toggle_quick_look(cx, store),
         Key::Named(NamedKey::F(2)) => rename_cursor(cx, store),
-        Key::Named(NamedKey::Delete) if modifiers.shift_key => {
-            deferred(cx, store, Deferred::DeletePermanently);
-        }
-        Key::Named(NamedKey::Delete) => deferred(cx, store, Deferred::Trash),
+        Key::Named(NamedKey::Delete) if modifiers.shift_key => delete_selection(cx, store),
+        Key::Named(NamedKey::Delete) => trash_selection(cx, store),
         Key::Named(NamedKey::Escape) => clear(cx, store),
         Key::Named(NamedKey::ContextMenu) => open_menu(cx, store),
         Key::Named(NamedKey::F(10)) if modifiers.shift_key => open_menu(cx, store),
@@ -96,10 +94,10 @@ fn command_shortcut(cx: &mut Cx, store: Store, character: char, shift: bool) -> 
         ('1', _) => set_view_mode(cx, store, ViewMode::Grid),
         ('2', _) => set_view_mode(cx, store, ViewMode::List),
         ('n', true) => new_folder(cx, store),
-        ('c', _) => deferred(cx, store, Deferred::Copy),
-        ('x', _) => deferred(cx, store, Deferred::Cut),
-        ('v', _) => deferred(cx, store, Deferred::Paste),
-        ('z', _) => deferred(cx, store, Deferred::Undo),
+        ('c', _) => copy_selection(cx, store),
+        ('x', _) => cut_selection(cx, store),
+        ('v', _) => paste(cx, store),
+        ('z', _) => undo(cx, store),
         _ => return false,
     }
     true

@@ -64,6 +64,11 @@ fn follow(
 }
 
 fn apply(cx: &mut Cx, store: Store, files: &Files) {
+    if store.confirm_permanent_delete.get(cx) != files.confirm_permanent_delete {
+        store
+            .confirm_permanent_delete
+            .set(cx, files.confirm_permanent_delete);
+    }
     if store.view_mode.get(cx) != files.view_mode {
         store.view_mode.set(cx, files.view_mode);
     }

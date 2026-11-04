@@ -10,9 +10,13 @@ use crate::{
         editing::Editing,
         listing::{AfterChange, publish, resolve_after_change, view_options},
         tasks::Task,
+        virtual_folder::VirtualFolder,
     },
     fs::engine::EngineCmd,
-    model::folder::{Folder, Stage},
+    model::{
+        dir_stamp::DirStamp,
+        folder::{Folder, Stage},
+    },
     state::{NavigationState, Store},
 };
 
@@ -48,6 +52,9 @@ pub fn go_forward(runtime: &mut Runtime, store: Store) {
 /// Opens the parent folder with the folder just left selected.
 pub fn go_up(runtime: &mut Runtime, store: Store) {
     let dir = store.dir(runtime);
+    if VirtualFolder::of(&dir).is_some() {
+        return;
+    }
     let (Some(parent), Some(name)) = (dir.parent(), dir.file_name()) else {
         return;
     };
@@ -61,12 +68,33 @@ pub fn go_up(runtime: &mut Runtime, store: Store) {
 /// Lists and watches the folder the store was opened on.
 pub fn load_current(runtime: &mut Runtime, store: Store) {
     let dir = store.dir(runtime);
-    store.send(runtime, EngineCmd::Load(dir.clone()));
-    watch(runtime, store, dir);
+    request_listing(runtime, store, dir, None);
     publish(runtime, store);
 }
 
-fn watch(runtime: &mut Runtime, store: Store, dir: Arc<Path>) {
+/// Lists `dir` (again only if it changed since `revisit`'s stamp) and
+/// watches it; a virtual folder is read by a task instead.
+fn request_listing(
+    runtime: &mut Runtime,
+    store: Store,
+    dir: Arc<Path>,
+    revisit: Option<Option<DirStamp>>,
+) {
+    if let Some(folder) = VirtualFolder::of(&dir) {
+        store.send(runtime, EngineCmd::Watch(Vec::new()));
+        store.run(runtime, Task::ListVirtual(folder));
+        return;
+    }
+    store.send(
+        runtime,
+        match revisit {
+            Some(stamp) => EngineCmd::Revalidate {
+                dir: dir.clone(),
+                stamp,
+            },
+            None => EngineCmd::Load(dir.clone()),
+        },
+    );
     store.send(runtime, EngineCmd::Watch(vec![dir.clone()]));
     store.run(runtime, Task::MeasureDisk(dir));
 }
@@ -103,17 +131,7 @@ fn enter(runtime: &mut Runtime, store: Store, dir: Arc<Path>) {
         .history
         .update(runtime, |history| history.store(previous));
 
-    store.send(
-        runtime,
-        match revisit {
-            Some(stamp) => EngineCmd::Revalidate {
-                dir: dir.clone(),
-                stamp,
-            },
-            None => EngineCmd::Load(dir.clone()),
-        },
-    );
-    watch(runtime, store, dir.clone());
+    request_listing(runtime, store, dir.clone(), revisit);
     store.cwd.set(runtime, dir);
     let state = store.backstack.with(runtime, |backstack| NavigationState {
         can_go_back: backstack.can_go_back(),

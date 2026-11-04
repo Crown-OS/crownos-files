@@ -5,4 +5,4 @@ pub mod state;
 pub mod util;
 pub mod views;
 
-use crownos_files_core::{fs, jobs, model};
+use crownos_files_core::{fs, jobs, mime, model, open, preview, thumbs};

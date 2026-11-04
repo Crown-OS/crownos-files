@@ -1,5 +1,7 @@
 //! The right column of the content card: what is selected, previewed and described.
 
+use std::path::Path;
+
 use crownconfig::TagColor;
 use crownui::{
     kit::{ButtonOptions, ButtonSize, ButtonVariant, Theme, button, icons, tag_chip, use_theme},
@@ -10,14 +12,19 @@ use crownui::{
 };
 
 use crate::{
-    app::actions::{Deferred, deferred, open_selection},
-    model::{entry::Entry, places::Places},
+    app::{
+        actions::{Deferred, deferred},
+        opening::open_selection,
+        thumbnails::thumb_source,
+        virtual_folder::VirtualFolder,
+    },
+    model::{entry::Entry, places::Places, trash::TrashedItem},
     state::Store,
     util::{
         breadcrumbs::describe_location, friendly_date::Today, human_size::HumanSize,
-        kind_label::kind_label, size_label::size_label, theme::tint,
+        kind_label::kind_label, size_label::size_label, theme::tint, thumb_store::ThumbSource,
     },
-    views::glyph::{Glyph, glyph_view},
+    views::{entry_picture::entry_picture, glyph::Glyph},
 };
 
 const CROSS_FADE_MILLIS: u64 = 240;
@@ -28,6 +35,7 @@ const PREVIEW_SCALE: f32 = 1.45;
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Description {
     glyph: Glyph,
+    thumb: Option<ThumbSource>,
     title: String,
     subtitle: String,
     rows: Vec<(&'static str, String)>,
@@ -57,16 +65,21 @@ pub fn details(store: Store) -> impl View {
 fn panel(cx: &mut Cx, store: Store, tags: Vec<TagColor>) -> impl View + use<> {
     let theme = use_theme(cx);
     let description = describe(cx, store);
-    let preview = vstack(glyph_view(description.glyph, PREVIEW_SCALE))
-        .h(PREVIEW_HEIGHT)
-        .shrink(0.0)
-        .items_center()
-        .justify_center()
-        .rounded(10.0)
-        .bg(tint(theme, |theme| theme.surface.sunken))
-        .border(1.0)
-        .border_color(tint(theme, |theme| theme.surface.border))
-        .overflow_hidden();
+    let preview = vstack(entry_picture(
+        store,
+        description.glyph,
+        description.thumb.clone(),
+        PREVIEW_SCALE,
+    ))
+    .h(PREVIEW_HEIGHT)
+    .shrink(0.0)
+    .items_center()
+    .justify_center()
+    .rounded(10.0)
+    .bg(tint(theme, |theme| theme.surface.sunken))
+    .border(1.0)
+    .border_color(tint(theme, |theme| theme.surface.border))
+    .overflow_hidden();
     let title = vstack((
         text(description.title)
             .text_size(14.0)
@@ -162,14 +175,27 @@ fn describe(runtime: &Runtime, store: Store) -> Description {
     store.places.with(runtime, |places| {
         store.folder.with(runtime, |folder| {
             let dir = folder.dir();
-            let location = describe_location(dir, places.home.as_deref());
+            let virtual_folder = VirtualFolder::of(dir);
+            let location = virtual_folder.map_or_else(
+                || describe_location(dir, places.home.as_deref()),
+                |folder| folder.label().to_owned(),
+            );
             let mut selected = folder.selected_entries();
             match (selected.next(), selected.next()) {
-                (Some(entry), None) => describe_entry(entry, dir, places, today, location),
+                (Some(entry), None) => {
+                    let location = match virtual_folder {
+                        Some(_) => store.trash_items.with(runtime, |trashed| {
+                            entry_location(entry, dir, trashed, places)
+                        }),
+                        None => location,
+                    };
+                    describe_entry(entry, dir, places, today, location)
+                }
                 (Some(_), Some(_)) => {
                     let total: u64 = folder.selected_entries().map(|entry| entry.stat.len).sum();
                     Description {
                         glyph: Glyph::Page(None),
+                        thumb: None,
                         title: format!("{} items", folder.selection().len()),
                         subtitle: HumanSize(total).to_string(),
                         rows: vec![("Where", location)],
@@ -182,10 +208,14 @@ fn describe(runtime: &Runtime, store: Store) -> Description {
                             .special(dir)
                             .and_then(|special| special.folder_glyph()),
                     ),
-                    title: dir.file_name().map_or_else(
-                        || "Computer".to_owned(),
-                        |name| name.to_string_lossy().into_owned(),
-                    ),
+                    thumb: None,
+                    title: match virtual_folder {
+                        Some(folder) => folder.label().to_owned(),
+                        None => dir.file_name().map_or_else(
+                            || "Computer".to_owned(),
+                            |name| name.to_string_lossy().into_owned(),
+                        ),
+                    },
                     subtitle: format!("Folder · {} items", folder.len()),
                     rows: vec![("Where", location)],
                     is_entry: false,
@@ -195,9 +225,24 @@ fn describe(runtime: &Runtime, store: Store) -> Description {
     })
 }
 
+/// Where an entry of a virtual folder really is: the folder it was trashed
+/// from, or the one holding it.
+fn entry_location(entry: &Entry, dir: &Path, trashed: &[TrashedItem], places: &Places) -> String {
+    let path = entry.path_in(dir);
+    let original = trashed
+        .iter()
+        .find(|item| item.file_path() == path)
+        .map(|item| item.info.original.as_path());
+    original
+        .unwrap_or(&path)
+        .parent()
+        .map(|parent| describe_location(parent, places.home.as_deref()))
+        .unwrap_or_default()
+}
+
 fn describe_entry(
     entry: &Entry,
-    dir: &std::path::Path,
+    dir: &Path,
     places: &Places,
     today: Today,
     location: String,
@@ -219,8 +264,10 @@ fn describe_entry(
         }
     }
     rows.push(("Where", location));
+    let glyph = Glyph::for_entry(entry, special);
     Description {
-        glyph: Glyph::for_entry(entry, special),
+        glyph,
+        thumb: thumb_source(entry, dir, glyph),
         title: entry.name.to_string(),
         subtitle: format!("{} · {}", kind_label(entry), size_label(entry)),
         rows,

@@ -14,16 +14,19 @@ use tokio::sync::mpsc::UnboundedSender;
 
 use crate::{
     app::{
-        config_sync::sort_order, editing::Editing, listing::AfterChange, tasks::Task,
-        type_ahead::TypeAhead,
+        config_sync::sort_order, conflicts::Conflicts, deleting::Deletion, drag_drop::Dragging,
+        editing::Editing, file_jobs::Jobs, listing::AfterChange, opening::Opening,
+        privilege::ElevationPrompt, quick_look::QuickLookState, tasks::Task,
+        thumbnails::Thumbnails, type_ahead::TypeAhead,
     },
     fs::engine::EngineCmd,
     model::{
         backstack::Backstack, device_entry::DeviceEntry, disk_usage::DiskUsage, folder::Folder,
-        history::History, places::Places, sort::SortOrder, view_options::ViewOptions,
+        history::History, places::Places, sort::SortOrder, trash::TrashedItem,
+        view_options::ViewOptions,
     },
     util::friendly_date::Today,
-    views::focus_slot::FocusSlot,
+    views::{file_menu::MenuPage, focus_slot::FocusSlot},
 };
 
 /// Whether the toolbar's back and forward buttons lead anywhere.
@@ -65,6 +68,18 @@ pub struct Store {
     pub search: FocusSlot,
     pub file_area: FocusSlot,
     pub toasts: Toasts,
+    pub scale: Signal<f32>,
+    pub thumbs: Thumbnails,
+    pub opening: Opening,
+    pub quick_look: QuickLookState,
+    pub jobs: Jobs,
+    pub conflicts: Conflicts,
+    pub elevation: Signal<Option<ElevationPrompt>>,
+    pub deletion: Deletion,
+    pub drag: Dragging,
+    pub trash_items: Cell<Vec<TrashedItem>>,
+    pub confirm_permanent_delete: Signal<bool>,
+    pub menu_page: Signal<MenuPage>,
 }
 
 impl Store {
@@ -107,6 +122,18 @@ impl Store {
             search: FocusSlot::new(cx),
             file_area: FocusSlot::new(cx),
             toasts: provide_toasts(cx),
+            scale: cx.scale_factor(),
+            thumbs: Thumbnails::new(cx),
+            opening: Opening::new(cx),
+            quick_look: QuickLookState::new(cx),
+            jobs: Jobs::new(cx),
+            conflicts: Conflicts::new(cx),
+            elevation: cx.signal(None),
+            deletion: Deletion::new(cx),
+            drag: Dragging::new(cx),
+            trash_items: cx.store(Vec::new()),
+            confirm_permanent_delete: cx.signal(files.confirm_permanent_delete),
+            menu_page: cx.signal(MenuPage::Main),
         }
     }
 

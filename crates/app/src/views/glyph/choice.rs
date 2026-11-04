@@ -46,6 +46,11 @@ impl Glyph {
             | FileKind::Other => Self::Page(badge),
         }
     }
+
+    /// Whether the file's own picture replaces this glyph once decoded.
+    pub fn has_thumbnail(self) -> bool {
+        matches!(self, Self::Photo | Self::Video)
+    }
 }
 
 #[cfg(test)]

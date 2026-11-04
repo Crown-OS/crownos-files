@@ -1,5 +1,7 @@
 //! Changing which entries are selected and where the keyboard cursor is.
 
+use std::path::PathBuf;
+
 use crownui::{ext::Modifiers, prelude::Runtime};
 
 use crate::{model::folder::Folder, state::Store};
@@ -64,4 +66,15 @@ pub fn clear(runtime: &mut Runtime, store: Store) {
 /// Selects exactly what a rubber band covers.
 pub fn select_positions(runtime: &mut Runtime, store: Store, positions: Vec<usize>) {
     change(runtime, store, |folder| folder.select_positions(positions));
+}
+
+/// The paths of the selected entries, in selection order.
+pub fn selected_paths(runtime: &Runtime, store: Store) -> Vec<PathBuf> {
+    store.folder.with(runtime, |folder| {
+        let dir = folder.dir();
+        folder
+            .selected_entries()
+            .map(|entry| entry.path_in(dir))
+            .collect()
+    })
 }

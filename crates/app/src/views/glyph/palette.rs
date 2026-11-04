@@ -35,6 +35,8 @@ pub const PHOTO: (Color, Color) = (rgb(0x1b1633), rgb(0x0b0b14));
 pub const PHOTO_GLOWS: [Color; 2] = [rgb(0x8f6dfb), rgb(0x1fb0e6)];
 pub const PHOTO_RIM: Color = rgba(0xffffff24);
 pub const PLAY: Color = rgba(0xffffffe6);
+pub const DURATION_PILL: Color = rgba(0x000000a6);
+pub const DURATION_TEXT: Color = rgb(0xffffff);
 
 pub const DISC: [Color; 4] = [rgb(0xc9c9d2), rgb(0x8f8fa0), rgb(0xe2e2ea), rgb(0xa39fc4)];
 pub const DISC_RING: Color = rgb(0xcfd0d6);

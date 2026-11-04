@@ -72,13 +72,17 @@ fn geometry(runtime: &mut Runtime, store: Store) -> (ItemLayout, f32, usize) {
     )
 }
 
-/// Starts a band at `position` unless it is over an entry (dragging entries is not a band).
-pub fn start_band(runtime: &mut Runtime, store: Store, position: Point) {
+/// The entry under a pointer at `position` in the viewport.
+pub fn entry_at(runtime: &mut Runtime, store: Store, position: Point) -> Option<usize> {
     let point = content_point(runtime, store, position);
     let (layout, width, count) = geometry(runtime, store);
-    if item_at(&layout, width, count, point).is_none() {
-        store.band.set(runtime, Some(Rect::new(point, Size::ZERO)));
-    }
+    item_at(&layout, width, count, point)
+}
+
+/// Starts a band at `position`, which is over no entry (dragging entries drags files).
+pub fn start_band(runtime: &mut Runtime, store: Store, position: Point) {
+    let point = content_point(runtime, store, position);
+    store.band.set(runtime, Some(Rect::new(point, Size::ZERO)));
 }
 
 /// Stretches the band to `position` and selects what it covers.

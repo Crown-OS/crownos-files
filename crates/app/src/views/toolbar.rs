@@ -1,22 +1,31 @@
 //! The header row: back and forward, the path, the view switch and search.
 
+use std::{path::Path, sync::Arc};
+
 use crownconfig::ViewMode;
 use crownui::{
     kit::{
-        ButtonOptions, ButtonVariant, FieldShape, PathSegment, TextInputOptions, ToggleItem,
-        icon_button, icons, path_bar, search, text_input, toggle_group,
+        ButtonOptions, ButtonVariant, FieldShape, PathBarOptions, PathSegment, TextInputOptions,
+        ToggleItem, icon_button, icons, path_bar, search, text_input, toggle_group,
     },
-    prelude::{Cx, Listeners, Runtime, Semantic, Spring, Styled, View, ViewSeq, bind, show},
+    prelude::{
+        Cx, Listeners, Runtime, Semantic, Spring, Styled, View, ViewSeq, bind, hstack, show,
+    },
 };
 
 use crate::{
     app::{
+        drag_drop::{drag_over_folder, drop_on_folder},
         editing::{Editing, cancel, commit},
         navigation::{go_back, go_forward, open_dir},
+        virtual_folder::VirtualFolder,
     },
     state::Store,
     util::breadcrumbs::breadcrumbs,
-    views::focus_slot::{FocusSlotOptions, autofocused, focus_slot},
+    views::{
+        focus_slot::{FocusSlotOptions, autofocused, focus_slot},
+        jobs_indicator::jobs_indicator,
+    },
 };
 
 const SEARCH_WIDTH: f32 = 136.0;
@@ -38,7 +47,9 @@ pub fn toolbar(cx: &mut Cx, store: Store) -> impl ViewSeq + use<> {
             }))
             .on_click(move |cx, _| go_forward(cx, store)),
         location(cx, store),
-        view_switch(cx, store),
+        hstack((jobs_indicator(cx, store), view_switch(cx, store)))
+            .items_center()
+            .shrink(0.0),
         search_box(store),
     )
 }
@@ -46,6 +57,9 @@ pub fn toolbar(cx: &mut Cx, store: Store) -> impl ViewSeq + use<> {
 fn segments(runtime: &mut Runtime, store: Store) -> Vec<PathSegment> {
     let home = store.places.with(runtime, |places| places.home.clone());
     store.cwd.with(runtime, |dir| {
+        if let Some(folder) = VirtualFolder::of(dir) {
+            return vec![PathSegment::new(folder.label()).icon(folder.icon())];
+        }
         breadcrumbs(dir, home.as_deref())
             .into_iter()
             .map(|crumb| {
@@ -72,14 +86,18 @@ fn location(cx: &mut Cx, store: Store) -> impl View + use<> {
     });
     let crumbs = move || {
         path_bar(shown, move |cx, index| {
-            let home = store.places.with(cx, |places| places.home.clone());
-            let target = store.cwd.with(cx, |dir| {
-                breadcrumbs(dir, home.as_deref())
-                    .get(index)
-                    .map(|crumb| crumb.path.into())
-            });
-            if let Some(dir) = target {
+            if let Some(dir) = crumb_path(cx, store, index) {
                 open_dir(cx, store, dir);
+            }
+        })
+        .on_segment_drag_over(move |cx, index, event| {
+            if let Some(dir) = crumb_path(cx, store, index) {
+                drag_over_folder(cx, store, &dir, false, event);
+            }
+        })
+        .on_segment_drop(move |cx, index, event| {
+            if let Some(dir) = crumb_path(cx, store, index) {
+                drop_on_folder(cx, store, &dir, event);
             }
         })
     };
@@ -103,6 +121,19 @@ fn location(cx: &mut Cx, store: Store) -> impl View + use<> {
     .items_center()
     .flex_1()
     .min_w(0.0)
+}
+
+/// The folder the path bar's segment `index` stands for.
+fn crumb_path(runtime: &mut Runtime, store: Store, index: usize) -> Option<Arc<Path>> {
+    let home = store.places.with(runtime, |places| places.home.clone());
+    store.cwd.with(runtime, |dir| {
+        if VirtualFolder::of(dir).is_some() {
+            return None;
+        }
+        breadcrumbs(dir, home.as_deref())
+            .get(index)
+            .map(|crumb| crumb.path.into())
+    })
 }
 
 /// The icons/list switch, kept in step with the store's view mode.

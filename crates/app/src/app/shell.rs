@@ -4,12 +4,17 @@ use crownui::{
 };
 
 use crate::{
-    app::{keys::handle_key, listing::reorder},
+    app::{
+        conflicts::follow_dismissal, keys::handle_key, listing::reorder,
+        quick_look::follow_selection, thumbnails::follow_visible,
+    },
     state::Store,
     util::theme::{tint, with_translucency_factor},
     views::{
-        details::details, file_area::file_area, file_menu::file_menu, metrics::DETAILS_WIDTH,
-        sidebar::sidebar, status_bar::status_bar, toolbar::toolbar,
+        conflict_dialog::conflict_dialog, delete_dialog::delete_dialog, details::details,
+        file_area::file_area, file_menu::file_menu, metrics::DETAILS_WIDTH,
+        open_with_dialog::open_with_dialog, sidebar::sidebar, status_bar::status_bar,
+        toolbar::toolbar,
     },
 };
 
@@ -23,6 +28,9 @@ const CHROME_TRANSLUCENCY: f32 = 0.5;
 /// drive it with a store filled from fixtures.
 pub fn shell(cx: &mut Cx, store: Store) -> impl View + use<> {
     cx.effect(move |runtime| reorder(runtime, store));
+    follow_visible(cx, store);
+    follow_selection(cx, store);
+    follow_dismissal(cx, store);
     let theme = use_theme(cx);
     let hairline = move || {
         vstack(())
@@ -51,6 +59,9 @@ pub fn shell(cx: &mut Cx, store: Store) -> impl View + use<> {
         backdrop,
         toast_host(window).w_full().h_full(),
         file_menu(store),
+        conflict_dialog(store),
+        delete_dialog(store),
+        open_with_dialog(store),
     ))
     .font_family(INTER_FAMILY)
     .on_key_down(move |cx, event| handle_key(cx, store, event))

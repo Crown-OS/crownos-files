@@ -1,8 +1,8 @@
 use crownui::{
     kit::{INTER_FAMILY, use_theme},
     prelude::{
-        Cx, Listeners, Role, Runtime, Semantic, Spring, Styled, TRANSPARENT, View, bind, hstack,
-        show, text, vstack,
+        AnyView, Cx, Listeners, Role, Runtime, Semantic, Spring, Styled, TRANSPARENT, View, bind,
+        hstack, show, text, vstack,
     },
 };
 
@@ -12,12 +12,13 @@ use crate::{
         selection::{click, ensure_selected},
     },
     state::Store,
-    util::theme::{hover_wash, selected_wash, tint},
+    util::theme::{drop_wash, hover_wash, selected_wash, tint},
     views::{
+        drop_target::folder_drop_target,
         entry_facts::EntryFacts,
+        entry_picture::entry_picture,
         entry_state::{is_renaming, is_selected, selection_value},
         file_menu::open_menu,
-        glyph::glyph_view,
         metrics::THUMB_WELL,
         rename_field::rename_field,
     },
@@ -27,13 +28,14 @@ const NAME_SIZE: f32 = 12.0;
 const META_SIZE: f32 = 11.0;
 
 /// One cell of the icon grid: the thumbnail well, the name pill and the size.
-pub fn file_tile(cx: &mut Cx, store: Store, position: usize) -> impl View + use<> {
+pub fn file_tile(cx: &mut Cx, store: Store, position: usize) -> AnyView {
     let theme = use_theme(cx);
     let facts = EntryFacts::at(cx, store, position);
     let hovered = cx.signal(false);
+    let drop_hovered = cx.signal(false);
     let selected = move |runtime: &mut Runtime| is_selected(runtime, store, position);
 
-    let well = vstack(glyph_view(facts.glyph, 1.0))
+    let well = vstack(entry_picture(store, facts.glyph, facts.thumb.clone(), 1.0))
         .w(THUMB_WELL.width)
         .h(THUMB_WELL.height)
         .items_center()
@@ -42,10 +44,12 @@ pub fn file_tile(cx: &mut Cx, store: Store, position: usize) -> impl View + use<
         .bg(bind(move |runtime: &mut Runtime| {
             let selected = selected(runtime);
             let hovered = hovered.get(runtime);
-            theme.with(runtime, |theme| match (selected, hovered) {
-                (true, _) => selected_wash(theme),
-                (false, true) => hover_wash(theme),
-                (false, false) => TRANSPARENT,
+            let dropping = drop_hovered.get(runtime);
+            theme.with(runtime, |theme| match (dropping, selected, hovered) {
+                (true, _, _) => drop_wash(theme),
+                (false, true, _) => selected_wash(theme),
+                (false, false, true) => hover_wash(theme),
+                (false, false, false) => TRANSPARENT,
             })
         }))
         .transition(Spring::crisp());
@@ -102,7 +106,8 @@ pub fn file_tile(cx: &mut Cx, store: Store, position: usize) -> impl View + use<
         .text_color(tint(theme, |theme| theme.text.muted))
         .truncate();
 
-    vstack((well, title, meta))
+    let folder = facts.folder.clone();
+    let tile = vstack((well, title, meta))
         .items_center()
         .gap(4.0)
         .py(4.0)
@@ -128,5 +133,9 @@ pub fn file_tile(cx: &mut Cx, store: Store, position: usize) -> impl View + use<
             event.stop_propagation();
             ensure_selected(cx, store, position);
             open_menu(cx, store);
-        })
+        });
+    match folder {
+        Some(dir) => folder_drop_target(tile, store, dir, drop_hovered).boxed(),
+        None => tile.boxed(),
+    }
 }
