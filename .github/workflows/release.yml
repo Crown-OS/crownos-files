@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 env:
-  PACKAGES: glib2 cairo poppler-glib gstreamer gst-plugins-base-libs gst-plugins-base libjpeg-turbo
+  PACKAGES: glib2 cairo poppler-glib gstreamer gst-plugins-base-libs gst-plugins-base libjpeg-turbo shared-mime-info
 
 jobs:
   package:

@@ -16,7 +16,7 @@ depends=(
   glibc gcc-libs glib2 cairo poppler-glib libjpeg-turbo fontconfig freetype2
   gstreamer gst-plugins-base-libs gst-plugins-base gst-plugins-good
   wayland libxkbcommon vulkan-icd-loader libx11 libxcb systemd-libs
-  udisks2 polkit util-linux
+  shared-mime-info udisks2 polkit util-linux
 )
 makedepends=(cargo clang)
 optdepends=(
