@@ -5,5 +5,6 @@ pub mod mounts;
 pub mod mounts_watch;
 pub mod refresher;
 pub mod revalidate;
+pub mod search;
 pub mod stat_at;
 pub mod watcher;
