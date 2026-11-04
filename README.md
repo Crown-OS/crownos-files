@@ -1,23 +1,28 @@
 # crownos-files
 
-The CrownOS file manager. The library is the engine behind the window: the
-directory model the UI renders, and the workers that keep it in sync with the
-disk, run file operations, and talk to the rest of the system.
+The CrownOS file manager, as a cargo workspace:
+
+| Crate | What it holds |
+|---|---|
+| `crates/app` (`crownos-files`) | The window |
+| `crates/core` (`crownos-files-core`) | The engine: directory model, listing, watching, file jobs, MIME, thumbnails, opening |
+| `crates/devices` (`crownos-files-devices`) | What lies outside the filesystem: drives, free space, privileged operations, tags, paired devices |
+| `crates/helper` (`crownos-files-helper`) | The root helper pkexec runs for privileged operations |
 
 ## Architecture
 
 | Module | What it does |
 |---|---|
-| `fs` | Streamed directory listing, sorting, inotify watching, mount table, folder sizes |
-| `model` | Compact entries, selection, history, special folders, the ops the UI applies |
-| `jobs` | Copy, move, delete and trash on a prioritised worker pool, with conflicts and undo |
-| `mime`, `thumbs`, `open` | Type detection, freedesktop thumbnails, default apps and launching |
-| `preview` | The quick-look client for `crownos-preview` |
+| `core::fs` | Streamed directory listing, sorting, inotify watching, mount table, folder sizes |
+| `core::model` | Compact entries, selection, history, special folders, the ops the UI applies |
+| `core::jobs` | Copy, move, delete and trash on a prioritised worker pool, with conflicts and undo |
+| `core::{mime, thumbs, open}` | Type detection, freedesktop thumbnails, default apps and launching |
+| `core::preview` | The quick-look client for `crownos-preview` |
 | `devices::udisks` | UDisks2 drives: live volume list, automount, mount, unlock, eject |
 | `devices::storage` | Free space (`statvfs`) and the per-folder breakdown of the storage card |
 | `devices::connect` | Paired phones and tablets from `crownconnect`, and sending files to them |
-| `privileged` | Running operations on other users' files as root, through pkexec |
-| `tags` | Tags in the `user.xdg.tags` attribute, and `tag:` search filters |
+| `devices::privileged` | Requests, validation, the helper's executor and the pkexec client |
+| `devices::tags` | Tags in the `user.xdg.tags` attribute, and `tag:` search filters |
 
 Blocking work runs on blocking threads and reports over channels; D-Bus and
 IPC clients run on tokio.
@@ -43,9 +48,9 @@ pkexec exit code 126 (dialog dismissed) is reported as `Cancelled`, 127 as
 ## Build
 
 ```sh
-cargo build
-cargo test
-cargo clippy --all-targets -- -D warnings
+cargo build --workspace
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
 ```
 
 Path dependencies are expected next to this checkout: `../crownos-ipc`,
@@ -53,9 +58,9 @@ Path dependencies are expected next to this checkout: `../crownos-ipc`,
 
 Features, all on by default:
 
-- `thumbs-pdf`: PDF thumbnails through poppler;
-- `thumbs-video`: video thumbnails through GStreamer;
-- `connect`: "Send to device" through crownconnect.
+- `crownos-files-core/thumbs-pdf`: PDF thumbnails through poppler;
+- `crownos-files-core/thumbs-video`: video thumbnails through GStreamer;
+- `crownos-files-devices/connect`: "Send to device" through crownconnect.
 
 ## Install paths
 
@@ -63,8 +68,8 @@ Features, all on by default:
 |---|---|
 | `crownos-files` | `/usr/bin/crownos-files` |
 | `crownos-files-helper` | `/usr/lib/crownos-files/crownos-files-helper` |
-| `data/crownos-files.desktop` | `/usr/share/applications/crownos-files.desktop` |
-| `data/org.crownos.files.helper.policy` | `/usr/share/polkit-1/actions/org.crownos.files.helper.policy` |
+| `crates/app/data/crownos-files.desktop` | `/usr/share/applications/crownos-files.desktop` |
+| `crates/helper/data/org.crownos.files.helper.policy` | `/usr/share/polkit-1/actions/org.crownos.files.helper.policy` |
 
 Make Files the folder handler with
 `xdg-mime default crownos-files.desktop inode/directory`. Drives need
