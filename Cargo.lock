@@ -605,7 +605,7 @@ dependencies = [
 
 [[package]]
 name = "crownos-files"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "compact_str",
@@ -626,7 +626,7 @@ dependencies = [
 
 [[package]]
 name = "crownos-files-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "bitflags",
  "cairo-rs",
@@ -663,7 +663,7 @@ dependencies = [
 
 [[package]]
 name = "crownos-files-devices"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "compact_str",
  "crownconnect-linux",
@@ -682,7 +682,7 @@ dependencies = [
 
 [[package]]
 name = "crownos-files-helper"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "crownos-files-core",
