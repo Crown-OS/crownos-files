@@ -1,4 +1,5 @@
 pub mod account_names;
+pub mod app_icon;
 pub mod breadcrumbs;
 pub mod clipboard_items;
 pub mod drag_icon;

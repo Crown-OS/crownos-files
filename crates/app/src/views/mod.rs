@@ -1,5 +1,6 @@
 //! The window's views, built from the kit's widgets and the store.
 
+pub mod app_brand;
 pub mod conflict_dialog;
 pub mod delete_dialog;
 pub mod details;

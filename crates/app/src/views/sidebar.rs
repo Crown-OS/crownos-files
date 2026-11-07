@@ -4,7 +4,7 @@
 use std::{path::Path, sync::Arc};
 
 use crownui::{
-    kit::{icons, sidebar_brand, sidebar_item, sidebar_section},
+    kit::{icons, sidebar_item, sidebar_section},
     prelude::{AnyView, Cx, Listeners, Runtime, View, ViewSeq, bind, spacer},
 };
 
@@ -13,6 +13,7 @@ use crate::{
     model::special_dir::SpecialDir,
     state::Store,
     views::{
+        app_brand::app_brand,
         devices_section::devices_section,
         drop_target::{folder_drop_target, trash_drop_target},
         pinned_section::pinned_section,
@@ -22,7 +23,7 @@ use crate::{
 
 pub fn sidebar(cx: &mut Cx, store: Store) -> impl ViewSeq + use<> {
     (
-        sidebar_brand("Files", icons::FOLDER),
+        app_brand(cx, store),
         favorites(cx, store),
         pinned_section(cx, store),
         devices_section(store),

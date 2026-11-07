@@ -8,9 +8,10 @@ stack > kit_toast_host[1] @0,0 1100x700 absolute w-100% h-100%
 stack > kit_toast_host[1] > stack @0,0 1100x700 flex-row w-100% h-100% grow-1
 stack > kit_toast_host[1] > stack > kit_sidebar_shell @0,0 834x700 flex-row p-6 w-100% h-100% grow-1 bg-#2b2b30ff
 stack > kit_toast_host[1] > stack > kit_sidebar_shell > kit_sidebar_menu @6,6 260x688 p-12 gap-6/6 w-260
-stack > kit_toast_host[1] > stack > kit_sidebar_shell > kit_sidebar_menu > kit_sidebar_item @18,18 236x44 flex-row pt-0 pr-10 pb-0 pl-10 h-44
-stack > kit_toast_host[1] > stack > kit_sidebar_shell > kit_sidebar_menu > kit_sidebar_item > svg @28,29 22x22 w-22 h-22
-stack > kit_toast_host[1] > stack > kit_sidebar_shell > kit_sidebar_menu > kit_sidebar_item > text[1] @60,31 184x18 grow-1
+stack > kit_toast_host[1] > stack > kit_sidebar_shell > kit_sidebar_menu > stack @18,18 236x44 flex-row pt-0 pr-10 pb-0 pl-10 gap-10/10 h-44
+stack > kit_toast_host[1] > stack > kit_sidebar_shell > kit_sidebar_menu > stack > keyed @28,29 22x22 
+stack > kit_toast_host[1] > stack > kit_sidebar_shell > kit_sidebar_menu > stack > keyed > cover_image @28,29 22x22 w-22 h-22
+stack > kit_toast_host[1] > stack > kit_sidebar_shell > kit_sidebar_menu > stack > text[1] @60,31 184x18 grow-1
 stack > kit_toast_host[1] > stack > kit_sidebar_shell > kit_sidebar_menu > kit_sidebar_section[1] @18,68 236x384 gap-2/2
 stack > kit_toast_host[1] > stack > kit_sidebar_shell > kit_sidebar_menu > kit_sidebar_section[1] > stack @18,68 236x26 pt-0 pr-10 pb-0 pl-10 h-26
 stack > kit_toast_host[1] > stack > kit_sidebar_shell > kit_sidebar_menu > kit_sidebar_section[1] > stack > text @28,68 216x14.4 
