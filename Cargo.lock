@@ -585,7 +585,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "crownconnect-linux"
+name = "crownlink-linux"
 version = "0.1.0"
 dependencies = [
  "crownos-ipc",
@@ -666,7 +666,7 @@ name = "crownos-files-devices"
 version = "0.2.0"
 dependencies = [
  "compact_str",
- "crownconnect-linux",
+ "crownlink-linux",
  "crownos-files-core",
  "crownos-ipc",
  "futures-util",

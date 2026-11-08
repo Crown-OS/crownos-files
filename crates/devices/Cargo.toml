@@ -9,11 +9,11 @@ publish.workspace = true
 
 [features]
 default = ["connect"]
-connect = ["dep:crownconnect-linux"]
+connect = ["dep:crownlink-linux"]
 
 [dependencies]
 compact_str.workspace = true
-crownconnect-linux = { workspace = true, optional = true }
+crownlink-linux = { workspace = true, optional = true }
 crownos-files-core.workspace = true
 crownos-ipc.workspace = true
 futures-util.workspace = true

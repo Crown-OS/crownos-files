@@ -1,4 +1,4 @@
-//! The crownconnect session for as long as the window is open: paired
+//! The crownlink session for as long as the window is open: paired
 //! devices up, files to send down.
 
 use std::path::{Path, PathBuf};

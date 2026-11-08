@@ -3,7 +3,7 @@
 # Builds the checkout this file lives in, so run makepkg from packaging/ with
 # the sibling path dependencies checked out next to the repository, as
 # .github/workflows/release.yml does: ../crownui, ../crownos-ipc,
-# ../crownos-preview and ../crownconnect-linux.
+# ../crownos-preview and ../crownlink-linux.
 
 pkgname=crownos-files
 pkgver=0.1.0
@@ -21,7 +21,7 @@ depends=(
 makedepends=(cargo clang)
 optdepends=(
   'crownos-preview: quick look'
-  'crownconnect-linux: send files to paired devices'
+  'crownlink-linux: send files to paired devices'
   'gst-libav: thumbnails of more video formats'
 )
 options=(!lto !debug)

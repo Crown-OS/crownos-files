@@ -1,4 +1,4 @@
-//! Paired phones and tablets from crownconnect, for the sidebar and
+//! Paired phones and tablets from crownlink, for the sidebar and
 //! "Send to device".
 
 use std::{
@@ -7,8 +7,8 @@ use std::{
     time::Duration,
 };
 
-use crownconnect_linux::ipc::proto::{self as protocol, DeviceClass, DeviceInfo};
-pub use crownconnect_linux::ipc::proto::{Battery, DeviceId};
+use crownlink_linux::ipc::proto::{self as protocol, DeviceClass, DeviceInfo};
+pub use crownlink_linux::ipc::proto::{Battery, DeviceId};
 use crownos_ipc::{EventMsg, adapter::tokio::AsyncClient};
 use serde::de::DeserializeOwned;
 use tokio::{
@@ -64,17 +64,17 @@ impl PairedDevice {
 pub enum ConnectEvent {
     /// The paired devices, after any change.
     Devices(Vec<PairedDevice>),
-    /// crownconnect is not running; the client keeps retrying.
+    /// crownlink is not running; the client keeps retrying.
     Unavailable,
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConnectError {
-    #[error("crownconnect is not running")]
+    #[error("crownlink is not running")]
     Unavailable,
     #[error("{} cannot be sent: its name is not UTF-8", .0.display())]
     NonUtf8Path(PathBuf),
-    #[error("crownconnect did not answer in time")]
+    #[error("crownlink did not answer in time")]
     Timeout,
     #[error(transparent)]
     Ipc(#[from] crownos_ipc::Error),
@@ -104,7 +104,7 @@ impl Endpoint {
     }
 }
 
-/// Handle to the crownconnect session task, which reconnects with backoff
+/// Handle to the crownlink session task, which reconnects with backoff
 /// whenever the daemon goes away. Dropping every clone ends it.
 #[derive(Debug, Clone)]
 pub struct Connect {

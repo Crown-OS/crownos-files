@@ -20,7 +20,7 @@ The CrownOS file manager, as a cargo workspace:
 | `core::preview` | The quick-look client for `crownos-preview` |
 | `devices::udisks` | UDisks2 drives: live volume list, automount, mount, unlock, eject |
 | `devices::storage` | Free space (`statvfs`) and the per-folder breakdown of the storage card |
-| `devices::connect` | Paired phones and tablets from `crownconnect`, and sending files to them |
+| `devices::connect` | Paired phones and tablets from `crownlink`, and sending files to them |
 | `devices::privileged` | Requests, validation, the helper's executor and the pkexec client |
 | `devices::tags` | Tags in the `user.xdg.tags` attribute, and `tag:` search filters |
 
@@ -54,13 +54,13 @@ cargo clippy --workspace --all-targets -- -D warnings
 ```
 
 Path dependencies are expected next to this checkout: `../crownui`, `../crownos-ipc`,
-`../crownos-preview`, `../crownconnect-linux`.
+`../crownos-preview`, `../crownlink-linux`.
 
 Features, all on by default:
 
 - `crownos-files-core/thumbs-pdf`: PDF thumbnails through poppler;
 - `crownos-files-core/thumbs-video`: video thumbnails through GStreamer;
-- `crownos-files-devices/connect`: "Send to device" through crownconnect.
+- `crownos-files-devices/connect`: "Send to device" through crownlink.
 
 ## Install paths
 

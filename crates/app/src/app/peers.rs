@@ -1,5 +1,5 @@
 //! Paired phones and tablets: the sidebar lists them, and "Send to" hands
-//! them the selection through the crownconnect worker.
+//! them the selection through the crownlink worker.
 
 use std::path::PathBuf;
 
@@ -33,7 +33,7 @@ impl PeerKind {
     }
 }
 
-/// A device paired with crownconnect.
+/// A device paired with crownlink.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Peer {
     pub id: PeerId,
@@ -53,7 +53,7 @@ pub enum PeerCommand {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PeerEvent {
-    /// The paired devices after any change; none while crownconnect is away.
+    /// The paired devices after any change; none while crownlink is away.
     Paired(Vec<Peer>),
     Sent {
         name: String,

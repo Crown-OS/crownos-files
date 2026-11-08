@@ -1,5 +1,5 @@
 //! Sending files to paired devices: the details panel's button, the context
-//! menu's "Send to" page and the toasts after crownconnect answers.
+//! menu's "Send to" page and the toasts after crownlink answers.
 
 use crowntest::{Role, role, text};
 
@@ -51,11 +51,11 @@ fn the_details_button_sends_the_selection_to_the_first_connected_phone() {
         &mut window,
         PeerEvent::SendFailed {
             name: "Pixel 9 Pro".to_owned(),
-            error: "crownconnect is not running".to_owned(),
+            error: "crownlink is not running".to_owned(),
         },
     );
     assert!(window.shows(text(
-        "Couldn't send to Pixel 9 Pro: crownconnect is not running"
+        "Couldn't send to Pixel 9 Pro: crownlink is not running"
     )));
 }
 

@@ -15,7 +15,7 @@ crownos-files-core = { path = "crates/core", default-features = false }
 crownos-files-devices = { path = "crates/devices", default-features = false }
 
 crownconfig = { path = "../crownui/crownconfig" }
-crownconnect-linux = { path = "../crownconnect-linux", default-features = false }
+crownlink-linux = { path = "../crownlink-linux", default-features = false }
 crownos-ipc = { path = "../crownos-ipc", features = ["tokio"] }
 crownos-preview = { path = "../crownos-preview", default-features = false }
 crowntest = { path = "../crownui/crowntest" }
@@ -63,7 +63,7 @@ unwrap_used = "warn"
 expect_used = "warn"
 dbg_macro = "warn"
 
-# crownconnect-linux names crownos-ipc by its git URL: one checkout for both,
+# crownlink-linux names crownos-ipc by its git URL: one checkout for both,
 # or their IPC traits would be two different crates.
 [patch."https://github.com/crown-os/crownos-ipc"]
 crownos-ipc = { path = "../crownos-ipc" }

@@ -3,7 +3,7 @@
 
 use std::{path::Path, time::Duration};
 
-use crownconnect_linux::ipc::proto::{
+use crownlink_linux::ipc::proto::{
     self as protocol, Battery, DeviceClass, DeviceId, DeviceInfo, FeatureSet, LinkKind,
 };
 use crownos_files_devices::connect::{Connect, ConnectEvent, DeviceKind, PairedDevice};
@@ -53,8 +53,8 @@ fn emit(server: &mut Server, push: Push) {
     .unwrap();
 }
 
-/// Stands in for crownconnect: lists two devices and records sent files.
-fn fake_crownconnect(
+/// Stands in for crownlink: lists two devices and records sent files.
+fn fake_crownlink(
     dir: &Path,
     sent: UnboundedSender<String>,
 ) -> (JoinHandle<()>, UnboundedSender<Push>) {
@@ -104,7 +104,7 @@ async fn next_devices(events: &mut UnboundedReceiver<ConnectEvent>) -> Vec<Paire
 async fn follows_devices_sends_files_and_reconnects() {
     let dir = tempfile::tempdir().unwrap();
     let (sent, mut received) = mpsc::unbounded_channel();
-    let (server, pushes) = fake_crownconnect(dir.path(), sent.clone());
+    let (server, pushes) = fake_crownlink(dir.path(), sent.clone());
 
     let (connect, mut events) = Connect::spawn_in(dir.path());
     let devices = next_devices(&mut events).await;
@@ -143,6 +143,6 @@ async fn follows_devices_sends_files_and_reconnects() {
     assert!(connect.devices().is_empty());
     assert!(connect.send_files(PHONE, &files).await.is_err());
 
-    let (_server, _pushes) = fake_crownconnect(dir.path(), sent);
+    let (_server, _pushes) = fake_crownlink(dir.path(), sent);
     assert_eq!(next_devices(&mut events).await.len(), 1);
 }
