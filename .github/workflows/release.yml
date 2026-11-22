@@ -29,7 +29,6 @@ jobs:
       - uses: Crown-OS/.github/.github/actions/prepare-workspace@main
         with:
           packages: ${{ env.PACKAGES }}
-          toolchain: 1.97.1
 
       - name: Package
         run: |
