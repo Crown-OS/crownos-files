@@ -26,6 +26,8 @@ tokio.workspace = true
 tokio-util.workspace = true
 
 [dev-dependencies]
+capture = { path = "../../../crownui/capture" }
+rustix.workspace = true
 crowntest.workspace = true
 impeller.workspace = true
 insta.workspace = true

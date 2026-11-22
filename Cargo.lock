@@ -431,6 +431,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "capture"
+version = "0.2.0"
+dependencies = [
+ "crowntest",
+ "geometry",
+ "graphics",
+ "impeller",
+ "inspect",
+ "libc",
+ "runtime",
+ "semantics",
+ "serde",
+ "serde_json",
+ "taffy-layout",
+ "thiserror 2.0.21",
+ "view",
+ "windowing",
+]
+
+[[package]]
 name = "castaway"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -608,6 +628,7 @@ name = "crownos-files"
 version = "0.2.0"
 dependencies = [
  "anyhow",
+ "capture",
  "compact_str",
  "crownconfig",
  "crownos-files-core",
@@ -617,6 +638,7 @@ dependencies = [
  "impeller",
  "insta",
  "resvg",
+ "rustix",
  "taffy-layout",
  "tempfile",
  "tikv-jemallocator",

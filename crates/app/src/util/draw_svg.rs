@@ -49,6 +49,7 @@ impl SvgWriter {
             DrawCommand::ClipRoundedRect(rect, radii) => {
                 self.clip(&rounded_rect_path(*rect, *radii));
             }
+            DrawCommand::ClipPath(path) => self.clip(&path_data(path)),
             DrawCommand::FillRect(rect, paint) => {
                 self.fill(&rounded_rect_path(*rect, CornerRadii::ZERO), paint);
             }
